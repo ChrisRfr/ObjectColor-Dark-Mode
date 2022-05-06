@@ -9,8 +9,8 @@ Set Gadget Background and Text Colors automatically based on the window's color 
    ex: ComboBoxGadget(#Gasdget,X,Y,W,H,#CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED)<br>
    To receive its events in the Window Callback and be drawn with the chosen colors.<br>
 <br>
-**For ButtonGadget**, you can use JellyButtons.pbi to get nice colored buttons. It is included in IceDesign GUI Designer.<br>
-<br>
+**For ButtonGadget**, you can use JellyButtons.pbi to get nice colored buttons. It is included in [IceDesign GUI Designer](https://github.com/ChrisRfr/IceDesign)<br>
+<br><br>
 **__Usage:__**<br>
 <br>
 Add: XIncludeFile ObjectColor.pbi<br>
@@ -38,4 +38,4 @@ TextColor:<br>
  -- #PB_Auto = White or Black depending on whether the background color is dark or light (Default).<br>
  -- The new text color. RGB() can be used to get a valid color value.<br>
  -- #PB_Default: to go back to the default system text color.<br><br>
- - For all gadgets with automatic background color and text color use: SetObjectColor()
+For all gadgets with automatic background color and text color use: SetObjectColor()
