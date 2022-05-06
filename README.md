@@ -39,5 +39,5 @@ Add: SetWindowCallback(@WinCallback()[, #Window]) to associates a callback to al
 > TextColor:<br>
 >  -- #PB_Auto = White or Black depending on whether the background color is dark or light (Default).<br>
 >  -- The new text color. RGB() can be used to get a valid color value.<br>
->  -- #PB_Default: to go back to the default system text color.<br><br>
+>  -- #PB_Default = to go back to the default system text color.<br><br>
 For all gadgets with automatic background color and text color use: SetObjectColor()
