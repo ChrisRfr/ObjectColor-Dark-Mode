@@ -1,4 +1,6 @@
 # ObjectColor - Dark-Mode
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?cmd=_s-xclick&hosted_button_id=9WZ5EDAMPH6SE)
+
 Set Gadget Background and Text Colors automatically based on the window's color or parent container's color.<br>
 <br>
 **PureBasic, Windows only**<br><br>
