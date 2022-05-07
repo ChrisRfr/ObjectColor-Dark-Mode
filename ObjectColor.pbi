@@ -4,7 +4,7 @@
 ;              Using #PB_Auto as a parameter for the background color, it automatically uses the parent container's color.
 ;              Using #PB_Auto as a parameter for the text color, it uses white or black color depending on the color of the parent container, light or dark.
 ;      Author: ChrisR
-;     Version: 1.2.0
+;     Version: 1.2.1
 ;        Date: 2022-04-14
 ;  PB-Version: 5.73 x64/x86
 ;          OS: Windows only
@@ -23,7 +23,6 @@
 ;
 ; -------------------------------------------------------------------------------------------------
 ; Add: XIncludeFile ObjectColor.pbi
-; Add: SetWindowCallback(@WinCallback()[, #Window]) to associates a callback to all open windows or for a specific window only.
 ;
 ;- Usages:
 ;
@@ -34,7 +33,7 @@
 ;   SetObjectColorType([Type.s])
 ;                 |
 ;     Type.s:     | Without Type for all supported Gadget. It is done automatically if SetObjectColorType() is not used.
-;                 | "NoEdit" for all supported Gadget except String and Editor
+;                 | "NoEdit" for all supported Gadget except String and Editor.
 ;                 | "ColorStatic" for CheckBox, Frame, Option and TrackBar only (WM_CTLCOLORSTATIC).
 ;                 | 1 or multiple #PB_GadgetType_xxxxx separated by comma. The parameter is a String, so between quotes. Ex: SetObjectColorType("#PB_GadgetType_CheckBox, #PB_GadgetType_Option").
 ;
@@ -56,6 +55,11 @@
 ;                 | #PB_Default: to go back to the default system text color.
 ;
 ;     For all gadgets with automatic background color and text color use: SetObjectColor()
+;
+;
+;   EnumChildColor(#Window) : For debugging purposes if needed by enumerating hierarchically the child gadgets With their colors. To be called after SetObjectColor.
+;     #Window     | #PB_All = All Window (Default).
+;                 | The Window number to use.
 ;
 ; -------------------------------------------------------------------------------------------------
 
@@ -112,7 +116,8 @@ Declare GetParentID(Gadget)
 Declare ParentIsWindow(Gadget)
 Declare ParentIsGadget(Gadget)
 Declare CountChildGadgets(ParentObject, GrandChildren = #False, FirstPassDone = #False)
-Declare EnumChildTemplate(ParentObject, FirstPassDone = #False)
+Declare EnumWinChildColor(ParentObject, FirstPassDone = #False)
+Declare EnumChildColor(Window = #PB_All)
 ; ObjectColor
 Declare IsDarkColorOC(Color)
 Declare AccentColorOC(Color, AddColorValue)
@@ -406,32 +411,21 @@ Procedure CountChildGadgets(ParentObject, GrandChildren = #False, FirstPassDone 
   ProcedureReturn Count
 EndProcedure
 
-Procedure EnumChildTemplate(ParentObject, FirstPassDone = #False)
+Procedure EnumWinChildColor(ParentObject, FirstPassDone = #False)
   Static Level
-  Protected ReturnVal
+  Protected BackColor, ReturnVal
   
   If FirstPassDone = 0
     If MapSize(Object()) = 0 : LoadObject() : EndIf
     If IsWindow(ParentObject)
       Level = 0
-      Debug "Enum Child Gadget of Window " + LSet(Str(ParentObject), 10) + "| WindowID " + LSet(Str(WindowID(ParentObject)), 10) + "(Level = 0)"
-    ElseIf IsGadget(ParentObject)
-      PushMapPosition(Object())
-      If FindMapElement(Object(), Str(ParentObject))
-        If Not(Object()\IsContainer)
-          ReturnVal = #True
-        EndIf
-        Level = Object()\Level
-        Debug "Enum Child Gadget of Gadget " + LSet(Str(ParentObject), 10) + "| GadgetID " + LSet(Str(GadgetID(ParentObject)), 10) + "(Level = " + Str(Level) + ")"
-      EndIf
-      PopMapPosition(Object())
-      PopMapPosition(Object())
+      BackColor = GetWindowColor(ParentObject)
+      Debug "Enum Child Gadget of Window " + LSet(Str(ParentObject), 10) + "| WindowID " + LSet(Str(WindowID(ParentObject)), 10) + "(Level = 0)" +
+            " - BackColor  RGB(" + Red(BackColor) + "," + Green(BackColor) + "," + Blue(BackColor) + ")"
+    Else
+      ProcedureReturn #PB_Default
     EndIf
     FirstPassDone = #True
-  EndIf
-  
-  If ReturnVal
-    ProcedureReturn #PB_Default
   EndIf
   
   Level + 1
@@ -440,9 +434,11 @@ Procedure EnumChildTemplate(ParentObject, FirstPassDone = #False)
   With Object()
     While NextMapElement(Object())
       If \Level = Level And \ParentObject = ParentObject
-        Debug LSet("", \Level*3 , " ") + "Gadget " + LSet(MapKey(Object()), 10) + "ParentGadget " + LSet(Str(\ParentObject), 10)  + "| GadgetID " + LSet(Str(\ObjectID), 10) + "ParentGadgetID " + LSet(Str(\ParentObjectID), 10) + "(Level = " + Str(\Level) + ")"
+        Debug LSet("", \Level*4 , " ") + "Gadget " + LSet(MapKey(Object()), 10) + "ParentGadget " + LSet(Str(\ParentObject), 10)  + "| GadgetID " + LSet(Str(\ObjectID), 10) + "ParentGadgetID " + LSet(Str(\ParentObjectID), 10) + "(Level = " + Str(\Level) + ")" +
+              " - BackMode: " +Str(\BackMode) + " RGB(" + Red(\BackColor) + "," + Green(\BackColor) + "," + Blue(\BackColor) + ")" +
+              " - TextMode: " +Str(\TextMode) + " RGB(" + Red(\TextColor) + "," + Green(\TextColor) + "," + Blue(\TextColor) + ")"
         If \IsContainer
-          EnumChildTemplate(Val(MapKey(Object())), FirstPassDone)
+          EnumWinChildColor(Val(MapKey(Object())), FirstPassDone)
           Level - 1
         EndIf
       EndIf
@@ -450,6 +446,20 @@ Procedure EnumChildTemplate(ParentObject, FirstPassDone = #False)
   EndWith
   PopMapPosition(Object())
   
+EndProcedure
+
+Procedure EnumChildColor(Window = #PB_All)
+  Protected I
+  If Window = #PB_All
+    For I = 0 To CountWindow
+      EnumWinChildColor(Window(0, I))
+      Debug ""
+    Next
+  Else
+    If IsWindow(Window)
+      EnumWinChildColor(Window)
+    EndIf
+  EndIf
 EndProcedure
 
 ;- ----- Public GetParent -----
@@ -1171,8 +1181,6 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
                 SetWindowTheme_(\ObjectID, "", 0)
             EndSelect
             
-          Case #PB_GadgetType_CheckBox, #PB_GadgetType_Frame
-            
           Case #PB_GadgetType_ComboBox
             RedrawWindow_(\ObjectID, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_UPDATENOW)
             
@@ -1366,29 +1374,36 @@ Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #
   
   If Gadget = #PB_All
     If Window = #PB_All
+      SetWindowCallback(@WinCallback()) 
       For I = 0 To CountWindow
         LoopObjectColor(Window(0, I), #PB_All, BackGroundColor, FrontColor)
       Next
     Else
-      LoopObjectColor(Window, #PB_All, BackGroundColor, FrontColor)
+      If IsWindow(Window)
+        SetWindowCallback(@WinCallback(), Window)
+        LoopObjectColor(Window, #PB_All, BackGroundColor, FrontColor)
+      EndIf
     EndIf
   Else
-    ParentWindow = GetWindowRoot(Gadget)
-    If (Window = #PB_All Or ParentWindow = Window)
-      If FindMapElement(Object(), Str(Gadget))
-        If Object(Str(Gadget))\IsContainer
-          LoopObjectColor(ParentWindow, Gadget, BackGroundColor, FrontColor)
-        Else
-          Select BackGroundColor
-            Case #PB_Auto
-              ParentBackColor = GetParentBackColor(Gadget)
-              If ParentBackColor = #PB_Default : ParentBackColor = BackDefaultColor() : EndIf
-            Case #PB_Default
-              ParentBackColor = GetSysColor_(#COLOR_WINDOW)
-            Default
-              ParentBackColor = BackGroundColor
-          EndSelect
-          ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
+    If IsGadget(Gadget)
+      ParentWindow = GetWindowRoot(Gadget)
+      If (Window = #PB_All Or ParentWindow = Window)
+        If FindMapElement(Object(), Str(Gadget))
+          SetWindowCallback(@WinCallback(), ParentWindow)
+          If Object(Str(Gadget))\IsContainer
+            LoopObjectColor(ParentWindow, Gadget, BackGroundColor, FrontColor)
+          Else
+            Select BackGroundColor
+              Case #PB_Auto
+                ParentBackColor = GetParentBackColor(Gadget)
+                If ParentBackColor = #PB_Default : ParentBackColor = BackDefaultColor() : EndIf
+              Case #PB_Default
+                ParentBackColor = GetSysColor_(#COLOR_WINDOW)
+              Default
+                ParentBackColor = BackGroundColor
+            EndSelect
+            ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
+          EndIf
         EndIf
       EndIf
     EndIf
@@ -1397,6 +1412,5 @@ Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #
 EndProcedure
 
 ; IDE Options = PureBasic 5.73 LTS (Windows - x64)
-; Folding = -------
+; Folding = --------
 ; EnableXP
-; Compiler = PureBasic 5.73 LTS (Windows - x64)

@@ -154,39 +154,37 @@ Procedure Open_Window_2(X = 600, Y = 20, Width = 420, Height = 450)
 EndProcedure
 
 ; Uncomment to Test with a Font 
-;SetGadgetFont(#PB_Default, FontID(#Font))
+;      SetGadgetFont(#PB_Default, FontID(#Font))
 
 Open_Window_1()
 Open_Window_2()
 
 ; Uncomment to Test DisableGadget 
-;For I = 0 To 25 : DisableGadget(I, #True) : Next
+;     For I = 0 To 25 : DisableGadget(I, #True) : Next
 
-;- Object Color functions:
-
-;- - Add SetWindowCallback()
-SetWindowCallback(@WinCallback())   
-;SetWindowCallback(@WinCallback(), #Window_1)
+;- Object Color functions :
 
 ;- - SetTheme (optional) 
-SetDarkTheme()
-;SetExplorerTheme()
+SetDarkTheme()   ; SetExplorerTheme()
 
 ;- - Add SetObjectColorType()
-;SetObjectColorType()                  ; All supported Gadget. Done by default if no other SetObjectColorType done
-;SetObjectColorType("NoEdit")          ; All supported Gadget Except String and Editor
-;SetObjectColorType("ColorStatic")     ; CheckBox, Frame, Option and TrackBar only
-;  SetObjectColorType parameter is a String, so between quotes. With #PB_GadgetType_xxxxx separated by comma
-;SetObjectColorType("#PB_GadgetType_CheckBox, #PB_GadgetType_Option, #PB_GadgetType_Canvas, #PB_GadgetType_Unknow")  ; Canvas, Unknow here for testing, they are not used.
+;      SetObjectColorType()                  ; All supported Gadget. Done by default if no other SetObjectColorType done
+;      SetObjectColorType("NoEdit")          ; All supported Gadget Except String and Editor
+;      SetObjectColorType("ColorStatic")     ; CheckBox, Frame, Option and TrackBar only
+;      SetObjectColorType("#PB_GadgetType_CheckBox, #PB_GadgetType_Option, #PB_GadgetType_Canvas, #PB_GadgetType_Unknow")  ; Parameter is a String, so between quotes. With #PB_GadgetType_xxxxx separated by comma. Canvas, Unknow here for testing, they are not used.
 
 ;- - Add SetObjectColor()
-SetObjectColor()
+SetObjectColor()  
 ; Uncomment for Testing other Color for Containers
-; SetObjectColor(#PB_All, #Cont_1, $3A3A52)
-; SetObjectColor(#PB_All, #Panel_1, $3A3A52)
-; SetObjectColor(#PB_All, #ScrlArea_1, $523A3A) 
-; SetObjectColor(#PB_All, #Cont_2, GetWindowColor(#Window_2))
-; SetObjectColor(#PB_All, #Tree_1, GetWindowColor(#Window_2), #Red)
+;      SetObjectColor(#PB_All, #PB_All, $323232)
+;      SetObjectColor(#PB_All, #Cont_1, $3A3A52)
+;      SetObjectColor(#PB_All, #Panel_1, $3A3A52)
+;      SetObjectColor(#PB_All, #ScrlArea_1, $523A3A) 
+;      SetObjectColor(#PB_All, #Cont_2, GetWindowColor(#Window_2))
+;      SetObjectColor(#PB_All, #Tree_1, GetWindowColor(#Window_2), #Red)
+
+; For debugging purposes if needed by enumerating hierarchically the child gadgets With their colors. To be called after SetObjectColor.
+EnumChildColor()
 
 Repeat
   Select WaitWindowEvent()
@@ -200,19 +198,19 @@ Repeat
           SetWindowColor(#Window_1, Color)
           SetObjectColor(#Window_1)
           ; Uncomment to Switch Between DisableGadget/EnableGadget
-          ;If IsWindowEnabled_(GadgetID(#Check_1))
-          ;  For I = 0 To 25 : DisableGadget(I, #True) : Next
-          ;Else
-          ;  For I = 0 To 25 : DisableGadget(I, #False) : Next
-          ;EndIf
+          ;      If IsWindowEnabled_(GadgetID(#Check_1))
+          ;        For I = 0 To 25 : DisableGadget(I, #True) : Next
+          ;      Else
+          ;        For I = 0 To 25 : DisableGadget(I, #False) : Next
+          ;      EndIf
           ; Uncomment for Testing other Color for Containers
-          ;If IsDarkColorOC(Color)
-          ;  Color = AccentColorOC(Color, 50)
-          ;Else
-          ;  Color = AccentColorOC(Color, -50)
-          ;EndIf
-          ;SetObjectColor(#Window_1, #Cont_1, Color)
-          ;SetObjectColor(#Window_1, #Panel_1, Color)
+          ;      If IsDarkColorOC(Color)
+          ;        Color = AccentColorOC(Color, 50)
+          ;      Else
+          ;        Color = AccentColorOC(Color, -50)
+          ;      EndIf
+          ;      SetObjectColor(#Window_1, #Cont_1, Color)
+          ;      SetObjectColor(#Window_1, #Panel_1, Color)
           
           ; ProgressBarDemo(#Progres_1)
           
@@ -221,22 +219,20 @@ Repeat
           SetWindowColor(#Window_2, Color)
           SetObjectColor(#Window_2)
           ; Uncomment for Testing other Color for Containers
-          ;If IsDarkColorOC(Color)
-          ;  Color = AccentColorOC(Color, 50)
-          ;Else
-          ;  Color = AccentColorOC(Color, -50)
-          ;EndIf
-          ;SetObjectColor(#Window_2, #ScrlArea_1, Color)
-          ;SetObjectColor(#Window_2, #Cont_2, GetWindowColor(#Window_2))
-          ;SetObjectColor(#Window_2, #Tree_1, GetWindowColor(#Window_2), #Red)
+          ;      If IsDarkColorOC(Color)
+          ;        Color = AccentColorOC(Color, 50)
+          ;      Else
+          ;        Color = AccentColorOC(Color, -50)
+          ;      EndIf
+          ;      SetObjectColor(#Window_2, #ScrlArea_1, Color)
+          ;      SetObjectColor(#Window_2, #Cont_2, GetWindowColor(#Window_2))
+          ;      SetObjectColor(#Window_2, #Tree_1, GetWindowColor(#Window_2), #Red)
           
       EndSelect
   EndSelect
 ForEver 
 
 ; IDE Options = PureBasic 5.73 LTS (Windows - x64)
-; CursorPosition = 201
-; FirstLine = 163
 ; Folding = -
 ; EnableXP
 ; DPIAware
