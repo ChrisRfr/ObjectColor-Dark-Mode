@@ -12,11 +12,8 @@ Set Gadget Background and Text Colors automatically based on the window's color 
    To receive its events in the Window Callback and be drawn with the chosen colors.<br>
 <br>
 **For ButtonGadget**, you can use JellyButtons.pbi to get nice colored buttons. It is included in [IceDesign GUI Designer](https://github.com/ChrisRfr/IceDesign)<br>
-<br><br>
-**__Usage:__**<br>
-<br>
-Add: XIncludeFile ObjectColor.pbi<br>
-Add: SetWindowCallback(@WinCallback()[, #Window]) to associates a callback to all open windows or for a specific window only.<br>
+## Usage:
+Add: XIncludeFile "ObjectColor.pbi"<br>
  - **SetDarkTheme()**     : Enable DarkMode_Explorer Theme (> Windows 10) for: Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree<br> 
  - **SetExplorerTheme()** : Enable Explorer Theme (> Vista) for the same Gadgets<br><br>
  - **SetObjectColorType([Type.s])**<br>
@@ -40,4 +37,8 @@ Add: SetWindowCallback(@WinCallback()[, #Window]) to associates a callback to al
 >  -- #PB_Auto = White or Black depending on whether the background color is dark or light (Default).<br>
 >  -- The new text color. RGB() can be used to get a valid color value.<br>
 >  -- #PB_Default = to go back to the default system text color.<br><br>
-For all gadgets with automatic background color and text color use: SetObjectColor()
+For all gadgets with automatic background color and text color use: SetObjectColor()<br><br>
+ - **EnumChildColor(#Window)** : For Debugging purposes if needed by enumerating hierarchically the child Gadgets with their Colors. To be called after SetObjectColor. <br>
+> #Window:<br>
+>  -- #PB_All = All Window (Default).<br>
+>  -- The Window number to use.<br>
