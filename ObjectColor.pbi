@@ -554,6 +554,7 @@ Procedure ListIconProc(hWnd, uMsg, wParam, lParam)
             Result = #CDRF_NOTIFYITEMDRAW
             
           Case #CDDS_ITEMPREPAINT
+            Debug "ListIconProc " +Str(Gadget)
             Text = GetGadgetItemText(Gadget, -1, *pnmCDraw\dwItemSpec)
             If *pnmCDraw\uItemState & #CDIS_SELECTED
               DrawFrameControl_(*pnmCDraw\hdc, *pnmCDraw\rc, #DFC_BUTTON, #DFCS_BUTTONPUSH | #DFCS_PUSHED)
@@ -758,7 +759,7 @@ EndProcedure
 
 Procedure WinCallback(hWnd, uMsg, wParam, lParam)
   Protected Result = #PB_ProcessPureBasicEvents
-  Protected Gadget, Text.s, BackColor, TextColor, Disabled, Color_HightLight, FadeGrayColor, Found
+  Protected Gadget, Text.s, BackColor, TextColor, Disabled, Color_HightLight, FadeGrayColor, Found, I
   Protected *NMDATETIMECHANGE.NMDATETIMECHANGE, *DrawItem.DRAWITEMSTRUCT, *lvCD.NMLVCUSTOMDRAW
   
   Select uMsg
@@ -785,6 +786,16 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
           DeleteObject_(hBrush())
           DeleteMapElement(hBrush())
         Wend 
+      EndIf
+      
+    Case #WM_ACTIVATE   ; Not sure if there is a need to RedrawWindow()
+      If wParam
+        For I = 0 To CountWindow
+          If Window(1, I) = hWnd
+            RedrawWindow_(hWnd, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_ALLCHILDREN | #RDW_UPDATENOW)
+            Break
+          EndIf
+        Next
       EndIf
       
     Case #WM_CTLCOLORSTATIC   ; For CheckBoxGadget, FrameGadget, OptionGadget, TrackBarGadget, TextGadget
