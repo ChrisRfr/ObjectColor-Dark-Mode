@@ -174,9 +174,10 @@ SetDarkTheme()   ; SetExplorerTheme()
 ;      SetObjectColorType("#PB_GadgetType_CheckBox, #PB_GadgetType_Option, #PB_GadgetType_Canvas, #PB_GadgetType_Unknow")  ; Parameter is a String, so between quotes. With #PB_GadgetType_xxxxx separated by comma. Canvas, Unknow here for testing, they are not used.
 
 ;- - Add SetObjectColor()
-SetObjectColor()  
+SetObjectColor()
 ; Uncomment for Testing other Color for Containers
-;      SetObjectColor(#PB_All, #PB_All, $323232)
+;      SetObjectColor(#Window_1, #PB_All, $080820)   ; If the background color is defined (Not #PB_Auto) SetWindowColor(#Window, Color) is done
+;      SetObjectColor(#Window_2, #PB_All, $200808)   ; If the background color is defined (Not #PB_Auto) SetWindowColor(#Window, Color) is done
 ;      SetObjectColor(#PB_All, #Cont_1, $3A3A52)
 ;      SetObjectColor(#PB_All, #Panel_1, $3A3A52)
 ;      SetObjectColor(#PB_All, #ScrlArea_1, $523A3A) 

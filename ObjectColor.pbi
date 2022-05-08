@@ -4,8 +4,8 @@
 ;              Using #PB_Auto as a parameter for the background color, it automatically uses the parent container's color.
 ;              Using #PB_Auto as a parameter for the text color, it uses white or black color depending on the color of the parent container, light or dark.
 ;      Author: ChrisR
-;     Version: 1.2.1
-;        Date: 2022-04-14
+;     Version: 1.2.2
+;        Date: 2022-05-08   (Creation Date: 2022-04-14)
 ;  PB-Version: 5.73 x64/x86
 ;          OS: Windows only
 ;      Credit: PB Forum, Rashad for his help: ComboBox WM_DRAWITEM example, Colored ListIcon Header,...
@@ -1314,6 +1314,8 @@ Procedure LoopObjectColor(Window, ParentObject, BackGroundColor, FrontColor, Fir
           ParentBackColor = GetSysColor_(#COLOR_WINDOW)
         Default
           ParentBackColor = BackGroundColor
+          ;If GetWindowColor(Window) = #PB_Default : SetWindowColor(Window, ParentBackColor) : EndIf
+          SetWindowColor(Window, ParentBackColor)
       EndSelect
       If ParentBackColor = #PB_Default : ParentBackColor = BackDefaultColor() : EndIf
     ElseIf FindMapElement(Object(), Str(ParentObject))
