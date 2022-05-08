@@ -184,7 +184,7 @@ SetObjectColor()
 ;      SetObjectColor(#PB_All, #Tree_1, GetWindowColor(#Window_2), #Red)
 
 ; For debugging purposes if needed by enumerating hierarchically the child gadgets With their colors. To be called after SetObjectColor.
-EnumChildColor()
+;EnumChildColor()
 
 Repeat
   Select WaitWindowEvent()

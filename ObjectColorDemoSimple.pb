@@ -37,7 +37,7 @@ Procedure Open_Window_0(X = 0, Y = 0, Width = 440, Height = 300)
         CompilerElse
           ButtonGadget(#PickColor, 20, 230, 400, 50, "Choose Color")
         CompilerEndIf
-    
+
     SetObjectColor()                    ; <== to Add
   EndIf
 EndProcedure
