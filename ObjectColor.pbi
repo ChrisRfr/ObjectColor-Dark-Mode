@@ -58,6 +58,7 @@
 ;
 ;
 ;   EnumChildColor(#Window) : For debugging purposes if needed by enumerating hierarchically the child gadgets With their colors. To be called after SetObjectColor.
+;
 ;     #Window     | #PB_All = All Window (Default).
 ;                 | The Window number to use.
 ;
@@ -449,6 +450,7 @@ Procedure EnumWinChildColor(ParentObject, FirstPassDone = #False)
 EndProcedure
 
 Procedure EnumChildColor(Window = #PB_All)
+  ProcedureReturnIf(MapSize(Object()) = 0)
   Protected I
   If Window = #PB_All
     For I = 0 To CountWindow
