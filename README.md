@@ -10,6 +10,7 @@ Set Gadget Background and Text Colors automatically based on the window's color 
 **Notes:** For the ComboBoxGadget, #CBS_HASSTRINGS and #CBS_OWNERDRAWFIXED must be added at Combobox creation time<br> 
    ex: ComboBoxGadget(#Gasdget,X,Y,W,H,#CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED)<br>
    To receive its events in the Window Callback and be drawn with the chosen colors.<br>
+   It does not work for ComboBox with #PB_ComboBox_Image constant, in this case do Not add #CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED<br>
 <br>
 **For ButtonGadget**, you can use JellyButtons.pbi to get nice colored buttons. It is included in [IceDesign GUI Designer](https://github.com/ChrisRfr/IceDesign)<br>
 ## Usage:
