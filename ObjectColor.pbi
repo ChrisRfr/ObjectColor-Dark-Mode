@@ -554,7 +554,6 @@ Procedure ListIconProc(hWnd, uMsg, wParam, lParam)
             Result = #CDRF_NOTIFYITEMDRAW
             
           Case #CDDS_ITEMPREPAINT
-            Debug "ListIconProc " +Str(Gadget)
             Text = GetGadgetItemText(Gadget, -1, *pnmCDraw\dwItemSpec)
             If *pnmCDraw\uItemState & #CDIS_SELECTED
               DrawFrameControl_(*pnmCDraw\hdc, *pnmCDraw\rc, #DFC_BUTTON, #DFCS_BUTTONPUSH | #DFCS_PUSHED)
