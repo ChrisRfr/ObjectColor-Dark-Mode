@@ -1524,7 +1524,15 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
             EndIf
             CompilerIf #UseUxGripper = 0
               If \GParentObjectID = 0
-                SplitterImg = CreateImage(#PB_Any, 5, 5, 24, \BackColor)
+                CompilerIf #SplitterBorder
+                  If IsDarkColorOC(\BackColor)
+                    SplitterImg = CreateImage(#PB_Any, 5, 5, 24, AccentColorOC(\BackColor, 40))
+                  Else
+                    SplitterImg = CreateImage(#PB_Any, 5, 5, 24, AccentColorOC(\BackColor, -40))
+                  EndIf
+                CompilerElse
+                  SplitterImg = CreateImage(#PB_Any, 5, 5, 24, \BackColor)
+                CompilerEndIf
                 If StartDrawing(ImageOutput(SplitterImg))
                   RoundBox(1, 1, 3, 3, 1, 1, \TextColor)
                   StopDrawing()
@@ -1668,5 +1676,5 @@ Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #
 EndProcedure
 
 ; IDE Options = PureBasic 5.73 LTS (Windows - x64)
-; Folding = ---------
+; Folding = ----------
 ; EnableXP
