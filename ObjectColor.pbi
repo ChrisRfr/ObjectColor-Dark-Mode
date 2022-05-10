@@ -13,8 +13,8 @@
 ;        Note: If you want to keep the default Theme for CheckBoxes and Options, look at breeze4me's code, with the theme hook for the DrawThemeText function.
 ;              CheckBox & Option Color Theme: https://www.purebasic.fr/english/viewtopic.php?p=583090#p583090
 ; -------------------------------------------------------------------------------------------------
-; Supported gadget: Calendar, CheckBox, ComboBox, Container, Date, Editor, ExplorerList, ExplorerTree, Frame, HyperLink, ListIcon, ListView,
-;            Option, Panel, ProgressBar, ScrollArea, Spin, String, Text, TrackBar, Tree
+; Supported gadget: Canvas Container, Calendar, CheckBox, ComboBox, Container, Date, Editor, ExplorerList, ExplorerTree, Frame, HyperLink, ListIcon, ListView,
+;            Option, Panel, ProgressBar, ScrollArea, Spin, Splitter, String, Text, TrackBar, Tree
 ;
 ; Notes: For the ComboBoxGadget, #CBS_HASSTRINGS and #CBS_OWNERDRAWFIXED must be added at Combobox creation time, ex: ComboBoxGadget(#Gasdget,X,Y,W,H,#CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED)
 ;        To receive its events in the Window Callback and be drawn with the chosen colors.
