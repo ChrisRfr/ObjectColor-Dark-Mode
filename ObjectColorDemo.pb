@@ -40,6 +40,7 @@ Enumeration Gadgets
   #String_1
   #Txt_1
   #Scrlbar_1
+  #Splitter_1
   #Track_1
   #Tree_1
   #String_2
@@ -70,15 +71,15 @@ Procedure ProgressBarDemo(Gadget)
   SetGadgetState(Gadget, 66)
 EndProcedure
 
-Procedure Open_Window_1(X = 20, Y = 20, Width = 560, Height = 450)
+Procedure Open_Window_1(X = 20, Y = 20, Width = 580, Height = 450)
   Protected I
   If OpenWindow(#Window_1, X, Y, Width, Height, "Demo ObjectColor Window_1", #PB_Window_SystemMenu)
     SetWindowColor(#Window_1, $080820)
     
     CompilerIf Defined(JellyButton, #PB_Procedure)
-      JellyButton(#PickColor_1, 20, 380, 520, 50, "Choose Color Window_1", $040416, #White, #PB_Button_Default)
+      JellyButton(#PickColor_1, 20, 380, 540, 50, "Choose Color Window_1", $040416, #White, #PB_Button_Default)
     CompilerElse
-      ButtonGadget(#PickColor_1, 20, 380, 520, 50, "Choose Color Window_1", #PB_Button_Default)
+      ButtonGadget(#PickColor_1, 20, 380, 540, 50, "Choose Color Window_1", #PB_Button_Default)
     CompilerEndIf
     
     ContainerGadget(#Cont_1, 20, 20, 320, 70, #PB_Container_Flat)
@@ -88,20 +89,21 @@ Procedure Open_Window_1(X = 20, Y = 20, Width = 560, Height = 450)
     OptionGadget(#Opt_2, 170, 35, 130, 24, "Option_2")
     CloseGadgetList()   ; #Cont_1
     
-    EditorGadget(#Edit_1, 360, 20, 180, 60)
+    EditorGadget(#Edit_1, 360, 20, 200, 60)
     For I = 1 To 5 : AddGadgetItem(#Edit_1, -1, "Editor Line " + Str(I)) : Next
-
+    ListIconGadget(#ListIcon_1, 360, 90, 200, 80, "ListIcon", 120)
+    AddGadgetColumn(#ListIcon_1, 1, "Column 2", 140)
+    For I = 1 To 5 : AddGadgetItem(#ListIcon_1, -1, "ListIcon Elément " + Str(I) +Chr(10)+ "Column 2 Elément " + Str(I)) : Next
+    SplitterGadget(#Splitter_1, 360, 20, 200, 150, #Edit_1, #ListIcon_1, #PB_Splitter_Separator)
+    SetGadgetState(#Splitter_1, 70)
+    
     FrameGadget(#Frame_1, 20, 100, 150, 60, "Frame_1")
     TextGadget(#Txt_1, 40, 125, 100, 20, "This is a Text")
     HyperLinkGadget(#Hyper_1, 190, 100, 150, 20, "https://www.purebasic.com/", RGB(0,0,128), #PB_HyperLink_Underline)
     DateGadget(#Date_1, 190, 130, 110, 30, "%yyyy-%mm-%dd", 0)
-    ListIconGadget(#ListIcon_1, 360, 90, 180, 80, "ListIcon", 120)
-    AddGadgetColumn(#ListIcon_1, 1, "Column 2", 140)
-    For I = 1 To 5 : AddGadgetItem(#ListIcon_1, -1, "ListIcon Elément " + Str(I) +Chr(10)+ "Column 2 Elément " + Str(I)) : Next
-    
     CalendarGadget(#Calend_1, 20, 180, 240, 180)
     
-    PanelGadget(#Panel_1, 280, 180, 260, 180)
+    PanelGadget(#Panel_1, 280, 180, 280, 180)
     AddGadgetItem(#Panel_1, -1, "Tab_0")
     ProgressBarGadget(#Progres_1, 20, 20, 160, 16, 0, 100)
     SetGadgetState(#Progres_1, 66)
@@ -113,7 +115,7 @@ Procedure Open_Window_1(X = 20, Y = 20, Width = 560, Height = 450)
   EndIf
 EndProcedure
 
-Procedure Open_Window_2(X = 600, Y = 20, Width = 420, Height = 450)
+Procedure Open_Window_2(X = 620, Y = 20, Width = 420, Height = 450)
   Protected I
   If OpenWindow(#Window_2, X, Y, Width, Height, "Demo ObjectColor Window_2", #PB_Window_SystemMenu)
     SetWindowColor(#Window_2, $200808)
@@ -126,11 +128,10 @@ Procedure Open_Window_2(X = 600, Y = 20, Width = 420, Height = 450)
     
     ExplorerTreeGadget(#ExpTree_1, 20, 20, 180, 60, "")
     ExplorerListGadget(#ExpList_1, 220, 20, 180, 100, "")
-    
     ListViewGadget(#ListView_1, 20, 100, 180, 60)
     For I = 1 To 5 : AddGadgetItem(#ListView_1, -1, "ListView Elément " + Str(I)) : Next
     
-    ;ComboBoxGadget(#Combo_1, 760, 132, 180, 28)   ; Enought if you use the "DarkMode_CFD" for "Combobox", otherwise you have to use #CBS_HASSTRINGS | #CBS_OWNERDRAWFIXED
+    ;ComboBoxGadget(#Combo_1, 760, 132, 180, 28)   ; Enought on Windows 10 if you use the "DarkMode_CFD" for "Combobox", otherwise you have to use #CBS_HASSTRINGS | #CBS_OWNERDRAWFIXED
     ComboBoxGadget(#Combo_1, 220, 132, 180, 28, #CBS_HASSTRINGS | #CBS_OWNERDRAWFIXED)
     SendMessage_(GadgetID(#Combo_1), #CB_SETMINVISIBLE, 5, 0)   ; Only 5 elements visible to display the ScrollBar for the Dark or Explorer theme
     For I = 1 To 10 : AddGadgetItem(#Combo_1, -1, "ComboBox Elément " + Str(I)) : Next
@@ -183,9 +184,6 @@ SetObjectColor()
 ;      SetObjectColor(#PB_All, #ScrlArea_1, $523A3A) 
 ;      SetObjectColor(#PB_All, #Cont_2, GetWindowColor(#Window_2))
 ;      SetObjectColor(#PB_All, #Tree_1, GetWindowColor(#Window_2), #Red)
-
-; For debugging purposes if needed by enumerating hierarchically the child gadgets With their colors. To be called after SetObjectColor.
-;EnumChildColor()
 
 Repeat
   Select WaitWindowEvent()
