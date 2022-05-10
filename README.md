@@ -39,7 +39,4 @@ Add: XIncludeFile "ObjectColor.pbi"<br>
 >  -- The new text color. RGB() can be used to get a valid color value.<br>
 >  -- #PB_Default = to go back to the default system text color.<br><br>
 For all gadgets with automatic background color and text color use: SetObjectColor()<br><br>
- - **EnumChildColor(#Window)** : For Debugging purposes if needed by enumerating hierarchically the child Gadgets with their Colors. To be called after SetObjectColor. <br>
-> #Window:<br>
->  -- #PB_All = All Window (Default).<br>
->  -- The Window number to use.<br>
+ - **To Debug** with the hierarchical list of gadgets with their colors, change the constant #DebugON = #True<br> 
