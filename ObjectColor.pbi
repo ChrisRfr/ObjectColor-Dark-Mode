@@ -537,7 +537,7 @@ EndProcedure
 
 Procedure SplitterPaint(hWnd, hdc, *rc.RECT, BackColor, Gripper)
   CompilerIf #SplitterBorder
-    If IsDarkColorOC(BackColor) : SetDCBrushColor_(hdc, #White) : Else : SetDCBrushColor_(hdc, #Black) : EndIf
+    If IsDarkColorOC(BackColor) : SetDCBrushColor_(hdc, AccentColorOC(BackColor, 60)) : Else : SetDCBrushColor_(hdc, AccentColorOC(BackColor, -60)) : EndIf
   CompilerElse
     If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 60) : Else : BackColor = AccentColorOC(BackColor, -60) : EndIf
     SetDCBrushColor_(hdc, BackColor)
