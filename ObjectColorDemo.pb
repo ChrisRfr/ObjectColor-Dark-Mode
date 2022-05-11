@@ -16,6 +16,8 @@ XIncludeFile "ObjectColor.pbi"
 ; Uncomment to Test with nice colored buttons
 ;XIncludeFile "JellyButtons.pbi"
 
+UsePNGImageDecoder()
+
 Enumeration Window
   #Window_1
   #Window_2
@@ -49,6 +51,8 @@ Enumeration Gadgets
   #Cont_2
   #Calend_1
   #Combo_1
+  #Combo_2
+  #Combo_3
   #PickColor_1
   #PickColor_2
 EndEnumeration
@@ -58,6 +62,12 @@ Enumeration Font
 EndEnumeration
 
 LoadFont(#Font, "Segoe UI Semibold", 10)
+
+Enumeration Image
+  #Imag
+EndEnumeration
+
+LoadImage(#Imag, #PB_Compiler_Home + "examples/sources/Data/world.png")
 
 Define Color, I
 
@@ -73,7 +83,7 @@ EndProcedure
 
 Procedure Open_Window_1(X = 20, Y = 20, Width = 580, Height = 450)
   Protected I
-  If OpenWindow(#Window_1, X, Y, Width, Height, "Demo ObjectColor Window_1", #PB_Window_SystemMenu)
+  If OpenWindow(#Window_1, X, Y, Width, Height, "Demo ObjectColor Window_1", #PB_Window_MinimizeGadget | #PB_Window_SystemMenu)
     SetWindowColor(#Window_1, $080820)
     
     CompilerIf Defined(JellyButton, #PB_Procedure)
@@ -93,7 +103,7 @@ Procedure Open_Window_1(X = 20, Y = 20, Width = 580, Height = 450)
     For I = 1 To 5 : AddGadgetItem(#Edit_1, -1, "Editor Line " + Str(I)) : Next
     ListIconGadget(#ListIcon_1, 360, 90, 200, 80, "ListIcon", 120)
     AddGadgetColumn(#ListIcon_1, 1, "Column 2", 140)
-    For I = 1 To 5 : AddGadgetItem(#ListIcon_1, -1, "ListIcon Elément " + Str(I) +Chr(10)+ "Column 2 Elément " + Str(I)) : Next
+    For I = 1 To 5 : AddGadgetItem(#ListIcon_1, -1, "ListIcon Element " + Str(I) +Chr(10)+ "Column 2 Element " + Str(I)) : Next
     SplitterGadget(#Splitter_1, 360, 20, 200, 150, #Edit_1, #ListIcon_1, #PB_Splitter_Separator)
     SetGadgetState(#Splitter_1, 70)
     
@@ -109,7 +119,13 @@ Procedure Open_Window_1(X = 20, Y = 20, Width = 580, Height = 450)
     SetGadgetState(#Progres_1, 66)
     SpinGadget(#Spin_1, 20, 56, 80, 26, 0, 100, #PB_Spin_Numeric)
     SetGadgetState(#Spin_1, 66)
-    StringGadget(#String_1, 20, 102, 160, 30, "String_1")
+    StringGadget(#String_1, 110, 56, 150, 26, "String_1")
+    
+    ComboBoxGadget(#Combo_1, 20, 102, 180, 28, #PB_ComboBox_Editable | #CBS_HASSTRINGS | #CBS_OWNERDRAWFIXED)
+    SendMessage_(GadgetID(#Combo_1), #CB_SETMINVISIBLE, 5, 0)   ; Only 5 elements visible to display the ScrollBar for the Dark or Explorer theme
+    For I = 1 To 10 : AddGadgetItem(#Combo_1, -1, "Combo Editable Element " + Str(I)) : Next
+    SetGadgetState(#Combo_1, 0)
+    
     AddGadgetItem(#Panel_1, -1, "Tab_1")
     CloseGadgetList()   ; #Panel_1
   EndIf
@@ -117,7 +133,7 @@ EndProcedure
 
 Procedure Open_Window_2(X = 620, Y = 20, Width = 420, Height = 450)
   Protected I
-  If OpenWindow(#Window_2, X, Y, Width, Height, "Demo ObjectColor Window_2", #PB_Window_SystemMenu)
+  If OpenWindow(#Window_2, X, Y, Width, Height, "Demo ObjectColor Window_2", #PB_Window_MinimizeGadget | #PB_Window_SystemMenu)
     SetWindowColor(#Window_2, $200808)
     
     CompilerIf Defined(JellyButton, #PB_Procedure)
@@ -129,13 +145,12 @@ Procedure Open_Window_2(X = 620, Y = 20, Width = 420, Height = 450)
     ExplorerTreeGadget(#ExpTree_1, 20, 20, 180, 60, "")
     ExplorerListGadget(#ExpList_1, 220, 20, 180, 100, "")
     ListViewGadget(#ListView_1, 20, 100, 180, 60)
-    For I = 1 To 5 : AddGadgetItem(#ListView_1, -1, "ListView Elément " + Str(I)) : Next
-    
-    ;ComboBoxGadget(#Combo_1, 760, 132, 180, 28)   ; Enought on Windows 10 if you use the "DarkMode_CFD" for "Combobox", otherwise you have to use #CBS_HASSTRINGS | #CBS_OWNERDRAWFIXED
-    ComboBoxGadget(#Combo_1, 220, 132, 180, 28, #CBS_HASSTRINGS | #CBS_OWNERDRAWFIXED)
-    SendMessage_(GadgetID(#Combo_1), #CB_SETMINVISIBLE, 5, 0)   ; Only 5 elements visible to display the ScrollBar for the Dark or Explorer theme
-    For I = 1 To 10 : AddGadgetItem(#Combo_1, -1, "ComboBox Elément " + Str(I)) : Next
-    SetGadgetState(#Combo_1, 1)
+    For I = 1 To 5 : AddGadgetItem(#ListView_1, -1, "ListView Element " + Str(I)) : Next
+       
+    ComboBoxGadget(#Combo_2, 220, 132, 180, 28, #PB_ComboBox_Image)   ; Partially Draw, only the selected item and not the list item 
+    SendMessage_(GadgetID(#Combo_2), #CB_SETMINVISIBLE, 5, 0)   ; Does not work here ComboBox_Image! else Only 5 elements visible to display the ScrollBar for the Dark or Explorer theme
+    For I = 1 To 10 : AddGadgetItem(#Combo_2, -1, "Combo Image Elem " + Str(I), ImageID(#Imag)) : Next
+    SetGadgetState(#Combo_2, 0)
     
     ScrollAreaGadget(#ScrlArea_1, 20, 180, 380, 180, 540, 300, 10, #PB_ScrollArea_Flat)
     ContainerGadget(#Cont_2, 10, 15, 340, 50, #PB_Container_Flat)
@@ -143,13 +158,19 @@ Procedure Open_Window_2(X = 620, Y = 20, Width = 420, Height = 450)
     SetGadgetState(#Track_1, 66)
     ScrollBarGadget(#Scrlbar_1, 170, 10, 150, 20, 0, 100, 10)
     CloseGadgetList()   ; #Cont_2
-    TreeGadget(#Tree_1, 10, 80, 190, 60)
+    TreeGadget(#Tree_1, 10, 80, 180, 60)
     AddGadgetItem(#Tree_1, -1, "Element 1", 0,  0)
     AddGadgetItem(#Tree_1, -1, "Node", 0,  0)
     AddGadgetItem(#Tree_1, -1, "Sub-element", 0,  1)
     AddGadgetItem(#Tree_1, -1, "Element 2", 0,  0)
     SetGadgetItemState(#Tree_1, 1, #PB_Tree_Expanded)
-    StringGadget(#String_2, 210, 80, 140, 30, "String_2")
+    StringGadget(#String_2, 200, 80, 150, 25, "String_2")
+    
+    ComboBoxGadget(#Combo_3, 200, 112, 150, 28, #CBS_HASSTRINGS | #CBS_OWNERDRAWFIXED)
+    SendMessage_(GadgetID(#Combo_3), #CB_SETMINVISIBLE, 5, 0)   ; Only 5 elements visible to display the ScrollBar for the Dark or Explorer theme
+    For I = 1 To 10 : AddGadgetItem(#Combo_3, -1, "Combo Element " + Str(I)) : Next
+    SetGadgetState(#Combo_3, 0)
+    
     CloseGadgetList()   ; #ScrlArea_1
   EndIf
 EndProcedure
@@ -161,7 +182,7 @@ Open_Window_1()
 Open_Window_2()
 
 ; Uncomment to Test DisableGadget 
-;     For I = 0 To 25 : DisableGadget(I, #True) : Next
+;     For I = 0 To 26 : DisableGadget(I, #True) : Next
 
 ;- Object Color functions :
 

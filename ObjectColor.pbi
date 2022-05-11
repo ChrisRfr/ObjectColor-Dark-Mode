@@ -4,7 +4,7 @@
 ;              Using #PB_Auto as a parameter for the background color, it automatically uses the parent container's color.
 ;              Using #PB_Auto as a parameter for the text color, it uses white or black color depending on the color of the parent container, light or dark.
 ;      Author: ChrisR
-;     Version: 1.2.4
+;     Version: 1.2.5
 ;        Date: 2022-05-08   (Creation Date: 2022-04-14)
 ;  PB-Version: 5.73 x64/x86
 ;          OS: Windows only
@@ -67,7 +67,7 @@ EnableExplicit
 #DebugON        = #False   ; #True
 #UseUxGripper   = #False   ; #False = Custom, #True = Uxtheme
 #LargeGripper   = #True    ; #False
-#SplitterBorder = #False   ; #True
+#SplitterBorder = #True    ; #False
 
 #PB_Auto = -2
 #PB_None = -3
@@ -626,7 +626,7 @@ Procedure SplitterExtCB(hWnd, uMsg, wParam, lParam)
         SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
         DeleteMapElement(OldProc())
       EndIf
-      ProcedureReturn #False
+      ;ProcedureReturn #False
       
   EndSelect
   
@@ -648,7 +648,7 @@ Procedure ListIconProc(hWnd, uMsg, wParam, lParam)
         SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
         DeleteMapElement(OldProc())
       EndIf
-      ProcedureReturn #False
+      ;ProcedureReturn #False
       
     Case #WM_NOTIFY
       *pnmHDR = lparam
@@ -731,7 +731,7 @@ Procedure PanelProc(hWnd, uMsg, wParam, lParam)
           EndIf
         Wend
       EndIf
-      ProcedureReturn #False
+      ;ProcedureReturn #False
       
     Case #WM_ERASEBKGND
       PushMapPosition(Object())
@@ -778,7 +778,7 @@ Procedure CalendarProc(hWnd, uMsg, wParam, lParam)
         SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
         DeleteMapElement(OldProc())
       EndIf
-      ProcedureReturn #False
+      ;ProcedureReturn #False
       
     Case #WM_ENABLE
       PushMapPosition(Object())
@@ -818,7 +818,7 @@ Procedure EditorProc(hWnd, uMsg, wParam, lParam)
         SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
         DeleteMapElement(OldProc())
       EndIf
-      ProcedureReturn #False
+      ;ProcedureReturn #False
       
     Case #WM_ENABLE
       PushMapPosition(Object())
@@ -878,7 +878,7 @@ Procedure StaticProc(hWnd, uMsg, wParam, lParam)
         SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
         DeleteMapElement(OldProc())
       EndIf
-      ProcedureReturn #False
+      ;ProcedureReturn #False
       
     Case #WM_ENABLE
       PushMapPosition(Object())
@@ -911,7 +911,7 @@ EndProcedure
 
 Procedure WinCallback(hWnd, uMsg, wParam, lParam)
   Protected Result = #PB_ProcessPureBasicEvents
-  Protected Gadget, Text.s, BackColor, TextColor, Disabled, Color_HightLight, FadeGrayColor, Found, I
+  Protected Gadget, ParentGadget, Buffer.s, Text.s, BackColor, TextColor, Disabled, Color_HightLight, FadeGrayColor, Found, I
   Protected *NMDATETIMECHANGE.NMDATETIMECHANGE, *DrawItem.DRAWITEMSTRUCT, *lvCD.NMLVCUSTOMDRAW
   
   Select uMsg
@@ -940,8 +940,18 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
           DeleteMapElement(hBrush())
         Wend
       EndIf
-      ProcedureReturn #False
+      ;ProcedureReturn #False
       
+    Case #WM_SIZE
+      If wParam = #SIZE_RESTORED   ; Not sure if there is a need to RedrawWindow()
+        For I = 0 To CountWindow - 1
+          If Window(1, I) = hWnd
+            RedrawWindow_(hWnd, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_ALLCHILDREN | #RDW_UPDATENOW)
+            Break
+          EndIf
+        Next
+      EndIf
+        
       ; Case #WM_ACTIVATE   ; Not sure if there is a need to RedrawWindow()
       ;   If wParam
       ;     For I = 0 To CountWindow - 1
@@ -984,6 +994,43 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
       ; Case #WM_CTLCOLORLISTBOX     ; ListView
       ; Case #WM_CTLCOLORSCROLLBAR   ; Scrlbar
       
+    Case #WM_CTLCOLOREDIT
+      ParentGadget = GetParent_(lParam)
+      Buffer = Space(64)
+      If GetClassName_(ParentGadget, @Buffer, 64)
+        If Buffer = "ComboBox"
+          Gadget = GetDlgCtrlID_(ParentGadget)
+          PushMapPosition(Object())
+          If FindMapElement(Object(), Str(Gadget))
+            If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
+              BackColor = Object()\BackColor
+              TextColor = Object()\TextColor
+              Disabled  = Object()\Disabled
+              Found     = #True
+            EndIf
+          EndIf
+          PopMapPosition(Object())
+          If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+          
+          If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
+                              " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
+          If Disabled
+            If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
+          EndIf
+          If Gadget <> GetActiveGadget()
+            SendMessage_(lParam, #EM_SETSEL, 0, 0)   ; Deselect the ComboBox editable string if not the active Gadget
+          EndIf
+          SetTextColor_(wParam, TextColor)
+          SetBkMode_(wParam, #TRANSPARENT)
+          ;SetBkColor_(wParam, BackColor)
+          If Not(FindMapElement(hBrush(), Str(BackColor)))
+            hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+          EndIf
+          ProcedureReturn hBrush(Str(BackColor))
+          
+        EndIf
+      EndIf
+
     Case #WM_DRAWITEM   ; For ComboBoxGadget and PanelGadget
       *DrawItem.DRAWITEMSTRUCT = lParam
       With *DrawItem
@@ -1141,7 +1188,7 @@ EndProcedure
 ;-
 ;- ----- Object Color -----
 Procedure SetObjectTheme(Theme.s)
-  Protected Gadget
+  Protected Gadget, ChildGadget, Buffer.s
   PB_Object_EnumerateStart(PB_Gadget_Objects)
   While PB_Object_EnumerateNext(PB_Gadget_Objects, @Gadget)
     Select GadgetType(Gadget)
@@ -1150,7 +1197,21 @@ Procedure SetObjectTheme(Theme.s)
         SetWindowTheme_(GadgetID(Gadget), @Theme, 0)
       Case #PB_GadgetType_ComboBox
         If OSVersion() >= #PB_OS_Windows_10 And Theme = "DarkMode_Explorer"
-          SetWindowTheme_(GadgetID(Gadget), "DarkMode_CFD", "Combobox")
+          Buffer = Space(64)
+          If GetClassName_(GadgetID(Gadget), @Buffer, 64)
+            If Buffer = "ComboBox"
+              SetWindowTheme_(GadgetID(Gadget), "DarkMode_CFD", "Combobox")
+            EndIf
+          EndIf
+          ChildGadget = GetWindow_(GadgetID(Gadget), #GW_CHILD)
+          If ChildGadget
+            Buffer = Space(64)
+            If GetClassName_(ChildGadget, @Buffer, 64)
+              If Buffer = "ComboBox"
+                SetWindowTheme_(ChildGadget, "DarkMode_CFD", "Combobox")
+              EndIf
+            EndIf
+          EndIf
         Else
           SetWindowTheme_(GadgetID(Gadget), @Theme, 0)
         EndIf
@@ -1523,24 +1584,24 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
               EndIf
             EndIf
             CompilerIf #UseUxGripper = 0
-              If \GParentObjectID = 0
-                CompilerIf #SplitterBorder
-                  If IsDarkColorOC(\BackColor)
-                    SplitterImg = CreateImage(#PB_Any, 5, 5, 24, AccentColorOC(\BackColor, 40))
-                  Else
-                    SplitterImg = CreateImage(#PB_Any, 5, 5, 24, AccentColorOC(\BackColor, -40))
-                  EndIf
-                CompilerElse
-                  SplitterImg = CreateImage(#PB_Any, 5, 5, 24, \BackColor)
-                CompilerEndIf
-                If StartDrawing(ImageOutput(SplitterImg))
-                  RoundBox(1, 1, 3, 3, 1, 1, \TextColor)
-                  StopDrawing()
+              If \GParentObjectID : DeleteObject_(Object()\GParentObjectID) : EndIf   ; Delete the  Pattern Brush stored in GParentObjectID field
+              CompilerIf #SplitterBorder
+                If IsDarkColorOC(\BackColor)
+                  SplitterImg = CreateImage(#PB_Any, 5, 5, 24, AccentColorOC(\BackColor, 40))
+                Else
+                  SplitterImg = CreateImage(#PB_Any, 5, 5, 24, AccentColorOC(\BackColor, -40))
                 EndIf
-                \GParentObjectID = CreatePatternBrush_(ImageID(SplitterImg))   ; Use the empty GParentObjectID field to save the Pattern Brush
-                FreeImage(SplitterImg)
+              CompilerElse
+                SplitterImg = CreateImage(#PB_Any, 5, 5, 24, \BackColor)
+              CompilerEndIf
+              If StartDrawing(ImageOutput(SplitterImg))
+                RoundBox(1, 1, 3, 3, 1, 1, \TextColor)
+                StopDrawing()
               EndIf
+              \GParentObjectID = CreatePatternBrush_(ImageID(SplitterImg))   ; Use the empty GParentObjectID field to save the Pattern Brush
+              FreeImage(SplitterImg)
             CompilerEndIf
+            RedrawWindow_(\ObjectID, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_UPDATENOW)
             
           Case #PB_GadgetType_Canvas  ; for Canvas Container
             
@@ -1676,5 +1737,6 @@ Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #
 EndProcedure
 
 ; IDE Options = PureBasic 5.73 LTS (Windows - x64)
+; CursorPosition = 6
 ; Folding = ----------
 ; EnableXP
