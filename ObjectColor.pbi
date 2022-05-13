@@ -64,10 +64,12 @@
 
 EnableExplicit
 
-#DebugON        = #False   ; #True
-#UseUxGripper   = #False   ; #False = Custom, #True = Uxtheme
-#LargeGripper   = #True    ; #False
-#SplitterBorder = #True    ; #False
+#DebugON         = #False   ; #True
+
+#EditAccentColor = #True    ; #False
+#UseUxGripper    = #False   ; #False = Custom, #True = Uxtheme. For Splitter 
+#LargeGripper    = #True    ; #False
+#SplitterBorder  = #True    ; #False
 
 #PB_Auto = -2
 #PB_None = -3
@@ -866,6 +868,9 @@ Procedure EditorProc(hWnd, uMsg, wParam, lParam)
       PopMapPosition(Object())
       If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
       
+      CompilerIf #EditAccentColor
+        If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 10) : Else : BackColor = AccentColorOC(BackColor, -10) : EndIf
+      CompilerEndIf
       If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
       GetClientRect_(hWnd, Rect)
       If Not(FindMapElement(hBrush(), Str(BackColor)))
@@ -1026,6 +1031,9 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
           PopMapPosition(Object())
           If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
           
+          CompilerIf #EditAccentColor
+            If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 10) : Else : BackColor = AccentColorOC(BackColor, -10) : EndIf
+          CompilerEndIf
           If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
                               " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
           If Disabled
@@ -1373,7 +1381,7 @@ Procedure SetObjectColorType(Type.s = "", Value = 1)
 EndProcedure
 
 Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
-  Protected OldBackColor, OldTextColor, SplitterImg
+  Protected BackColor, OldBackColor, OldTextColor, SplitterImg
   
   If FindMapElement(Object(), Str(Gadget))
     With Object()
@@ -1503,11 +1511,23 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
                 SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @EditorProc())
               EndIf
             EndIf
-            SetGadgetColor(Gadget, #PB_Gadget_BackColor, \BackColor)
+            If IsDarkColorOC(\BackColor) : BackColor = AccentColorOC(\BackColor, 20) : Else : BackColor = AccentColorOC(\BackColor, -20) : EndIf
+            SetGadgetColor(Gadget, #PB_Gadget_BackColor, BackColor)
             SetGadgetColor(Gadget, #PB_Gadget_FrontColor, \TextColor)
             SendMessage_(\ObjectID, #WM_ENABLE, IsWindowEnabled_(\ObjectID), 0)
             
-          Case #PB_GadgetType_ListView, #PB_GadgetType_Spin, #PB_GadgetType_String
+          Case #PB_GadgetType_Spin, #PB_GadgetType_String
+            SetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE, GetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE) &~ #WS_EX_CLIENTEDGE)
+            SetWindowLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) | #WS_BORDER)
+            CompilerIf #EditAccentColor
+              If IsDarkColorOC(\BackColor) : BackColor = AccentColorOC(\BackColor, 10) : Else : BackColor = AccentColorOC(\BackColor, -10) : EndIf
+              SetGadgetColor(Gadget, #PB_Gadget_BackColor, BackColor)
+            CompilerElse
+              SetGadgetColor(Gadget, #PB_Gadget_BackColor, \BackColor)
+            CompilerEndIf
+            SetGadgetColor(Gadget, #PB_Gadget_FrontColor, \TextColor)
+            
+         Case #PB_GadgetType_ListView
             SetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE, GetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE) &~ #WS_EX_CLIENTEDGE)
             SetWindowLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) | #WS_BORDER)
             SetGadgetColor(Gadget, #PB_Gadget_BackColor, \BackColor)
