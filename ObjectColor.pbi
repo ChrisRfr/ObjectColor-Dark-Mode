@@ -4,7 +4,7 @@
 ;              Using #PB_Auto as a parameter for the background color, it automatically uses the parent container's color.
 ;              Using #PB_Auto as a parameter for the text color, it uses white or black color depending on the color of the parent container, light or dark.
 ;      Author: ChrisR
-;     Version: 1.2.5
+;     Version: 1.2.6
 ;        Date: 2022-05-08   (Creation Date: 2022-04-14)
 ;  PB-Version: 5.73 x64/x86
 ;          OS: Windows only
@@ -492,9 +492,9 @@ EndProcedure
 
 Procedure FadeColorOC(Color, Percent, FadeColor = $808080)
   Protected R, G, B
-  R = Red(FadeColor)   * Percent / 100 + Red(Color)   * (100 - Percent) / 100
-  G = Green(FadeColor) * Percent / 100 + Green(Color) * (100 - Percent) / 100
-  B = Blue(FadeColor)  * Percent / 100 + Blue(Color)  * (100 - Percent) / 100
+  R = Red(FadeColor)   * Percent / 100 + Red(Color)   * (100 - Percent) / 100 : If R > 255 : R = 255 : EndIf
+  G = Green(FadeColor) * Percent / 100 + Green(Color) * (100 - Percent) / 100 : If G > 255 : G = 255 : EndIf
+  B = Blue(FadeColor)  * Percent / 100 + Blue(Color)  * (100 - Percent) / 100 : If B > 255 : B = 255 : EndIf
   ProcedureReturn RGB(R, G, B)
 EndProcedure
 
@@ -592,6 +592,31 @@ Procedure SplitterExtCB(hWnd, uMsg, wParam, lParam)
   Protected OldSplitterProc = OldProc(Str(Gadget))
   
   Select uMsg
+           
+    Case #WM_NCDESTROY
+      If FindMapElement(Object(), Str(Gadget))
+        If Object()\GParentObjectID : DeleteObject_(Object()\GParentObjectID) : EndIf   ; Delete the  Pattern Brush stored in GParentObjectID field
+        DeleteMapElement(Object())
+      EndIf
+      If FindMapElement(OldProc(), Str(Gadget))
+        SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
+        DeleteMapElement(OldProc())
+      EndIf
+      ; Delete map element for all children's gadgets that no longer exist
+      If MapSize(Object()) > 0
+        ResetMap(Object())
+        While NextMapElement(Object())
+          If Not(IsGadget(Val(MapKey(Object()))))
+            If FindMapElement(OldProc(), MapKey(Object()))
+              SetWindowLongPtr_(Object()\ObjectID, #GWLP_WNDPROC, OldProc())
+              DeleteMapElement(OldProc())
+            EndIf
+            DeleteMapElement(Object())
+          EndIf
+        Wend
+      EndIf
+      ;ProcedureReturn #False
+      
     Case #WM_PAINT
       PushMapPosition(Object())
       If FindMapElement(Object(), Str(Gadget))
@@ -616,17 +641,6 @@ Procedure SplitterExtCB(hWnd, uMsg, wParam, lParam)
       
     Case #WM_LBUTTONDBLCLK
       PostEvent(#PB_Event_Gadget, EventWindow(), Gadget, #PB_EventType_LeftDoubleClick)
-      
-    Case #WM_NCDESTROY
-      If FindMapElement(Object(), Str(Gadget))
-        If Object()\GParentObjectID : DeleteObject_(Object()\GParentObjectID) : EndIf   ; Delete the  Pattern Brush stored in GParentObjectID field
-        DeleteMapElement(Object())
-      EndIf
-      If FindMapElement(OldProc(), Str(Gadget))
-        SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
-        DeleteMapElement(OldProc())
-      EndIf
-      ;ProcedureReturn #False
       
   EndSelect
   
@@ -706,8 +720,8 @@ EndProcedure
 
 Procedure PanelProc(hWnd, uMsg, wParam, lParam)
   Protected BackColor, ParentBackColor, Found
-  Protected Gadget = GetDlgCtrlID_(hWnd), *DrawItem.DRAWITEMSTRUCT, Rect.Rect
-  Protected Result = CallWindowProc_(OldProc(Str(Gadget)), hWnd, uMsg, wParam, lParam)
+  Protected Gadget = GetDlgCtrlID_(hWnd), *DrawItem.DRAWITEMSTRUCT, Rect.Rect 
+  Protected OldPanelProc = OldProc(Str(Gadget))
   
   Select uMsg
     Case #WM_NCDESTROY
@@ -732,7 +746,7 @@ Procedure PanelProc(hWnd, uMsg, wParam, lParam)
         Wend
       EndIf
       ;ProcedureReturn #False
-      
+           
     Case #WM_ERASEBKGND
       PushMapPosition(Object())
       If FindMapElement(Object(), Str(Gadget))
@@ -742,15 +756,15 @@ Procedure PanelProc(hWnd, uMsg, wParam, lParam)
         EndIf
       EndIf
       PopMapPosition(Object())
-      If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+      If Found = #False Or BackColor = #PB_None : ProcedureReturn CallWindowProc_(OldPanelProc, hWnd, uMsg, wParam, lParam) : EndIf
       
-      If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
+      If #DebugON : Debug "WM_ERASEBKGND " + LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
       *DrawItem.DRAWITEMSTRUCT = wParam
+      ; Protected PanelImgList = SendMessage_(hWnd, #TCM_GETIMAGELIST, 0, 0)
       GetClientRect_(hWnd, Rect)
       If Not(FindMapElement(hBrush(), Str(BackColor)))
         hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
       EndIf
-      Rect\top = GetGadgetAttribute(Gadget, #PB_Panel_TabHeight)
       FillRect_(wParam, @Rect, hBrush(Str(BackColor)))
       ParentBackColor  = GetParentBackColor(Gadget)
       If Not(FindMapElement(hBrush(), Str(ParentBackColor)))
@@ -762,7 +776,7 @@ Procedure PanelProc(hWnd, uMsg, wParam, lParam)
       
   EndSelect
   
-  ProcedureReturn Result
+  ProcedureReturn CallWindowProc_(OldPanelProc, hWnd, uMsg, wParam, lParam)
 EndProcedure
 
 Procedure CalendarProc(hWnd, uMsg, wParam, lParam)
@@ -942,17 +956,17 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
       EndIf
       ;ProcedureReturn #False
       
-    Case #WM_SIZE
-      If wParam = #SIZE_RESTORED   ; Not sure if there is a need to RedrawWindow()
-        For I = 0 To CountWindow - 1
-          If Window(1, I) = hWnd
-            RedrawWindow_(hWnd, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_ALLCHILDREN | #RDW_UPDATENOW)
-            Break
-          EndIf
-        Next
-      EndIf
+      ; Case #WM_SIZE
+      ;   If wParam = #SIZE_RESTORED   ; Not sure if there is a need to RedrawWindow()
+      ;     For I = 0 To CountWindow - 1
+      ;       If Window(1, I) = hWnd
+      ;         RedrawWindow_(hWnd, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_ALLCHILDREN | #RDW_UPDATENOW)
+      ;         Break
+      ;       EndIf
+      ;     Next
+      ;   EndIf
         
-      ; Case #WM_ACTIVATE   ; Not sure if there is a need to RedrawWindow()
+      ; Case #WM_ACTIVATE              ; Not sure if there is a need to RedrawWindow()
       ;   If wParam
       ;     For I = 0 To CountWindow - 1
       ;       If Window(1, I) = hWnd
@@ -1105,7 +1119,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
             If Not(FindMapElement(hBrush(), Str(FadeGrayColor)))
               hBrush(Str(FadeGrayColor)) = CreateSolidBrush_(FadeGrayColor)
             EndIf
-            \rcItem\top + 2 : \rcItem\bottom + 2
+            \rcItem\top + 2 : \rcItem\bottom + 3   ; Default: \rcItem\bottom + 2 . +3 to decrease the size of the bottom line
             FillRect_(\hDC, \rcItem, hBrush(Str(FadeGrayColor)))
           EndIf
           
@@ -1196,24 +1210,28 @@ Procedure SetObjectTheme(Theme.s)
            #PB_GadgetType_ScrollArea, #PB_GadgetType_ScrollBar, #PB_GadgetType_Tree
         SetWindowTheme_(GadgetID(Gadget), @Theme, 0)
       Case #PB_GadgetType_ComboBox
-        If OSVersion() >= #PB_OS_Windows_10 And Theme = "DarkMode_Explorer"
-          Buffer = Space(64)
-          If GetClassName_(GadgetID(Gadget), @Buffer, 64)
-            If Buffer = "ComboBox"
+        Buffer = Space(64)
+        If GetClassName_(GadgetID(Gadget), @Buffer, 64)
+          If Buffer = "ComboBox"
+            If OSVersion() >= #PB_OS_Windows_10 And Theme = "DarkMode_Explorer"
               SetWindowTheme_(GadgetID(Gadget), "DarkMode_CFD", "Combobox")
+            Else
+              SetWindowTheme_(GadgetID(Gadget), @Theme, 0)
             EndIf
           EndIf
-          ChildGadget = GetWindow_(GadgetID(Gadget), #GW_CHILD)
-          If ChildGadget
-            Buffer = Space(64)
-            If GetClassName_(ChildGadget, @Buffer, 64)
-              If Buffer = "ComboBox"
+        EndIf
+        ChildGadget = GetWindow_(GadgetID(Gadget), #GW_CHILD)
+        If ChildGadget
+          Buffer = Space(64)
+          If GetClassName_(ChildGadget, @Buffer, 64)
+            If Buffer = "ComboBox"
+              If OSVersion() >= #PB_OS_Windows_10 And Theme = "DarkMode_Explorer"
                 SetWindowTheme_(ChildGadget, "DarkMode_CFD", "Combobox")
+              Else
+                SetWindowTheme_(ChildGadget, @Theme, 0)
               EndIf
             EndIf
           EndIf
-        Else
-          SetWindowTheme_(GadgetID(Gadget), @Theme, 0)
         EndIf
     EndSelect
   Wend
@@ -1737,6 +1755,5 @@ Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #
 EndProcedure
 
 ; IDE Options = PureBasic 5.73 LTS (Windows - x64)
-; CursorPosition = 6
 ; Folding = ----------
 ; EnableXP

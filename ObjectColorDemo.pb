@@ -114,7 +114,7 @@ Procedure Open_Window_1(X = 20, Y = 20, Width = 580, Height = 450)
     CalendarGadget(#Calend_1, 20, 180, 240, 180)
     
     PanelGadget(#Panel_1, 280, 180, 280, 180)
-    AddGadgetItem(#Panel_1, -1, "Tab_0")
+    AddGadgetItem(#Panel_1, -1, "Tab_0", ImageID(#Imag))
     ProgressBarGadget(#Progres_1, 20, 20, 160, 16, 0, 100)
     SetGadgetState(#Progres_1, 66)
     SpinGadget(#Spin_1, 20, 56, 80, 26, 0, 100, #PB_Spin_Numeric)
@@ -126,7 +126,8 @@ Procedure Open_Window_1(X = 20, Y = 20, Width = 580, Height = 450)
     For I = 1 To 10 : AddGadgetItem(#Combo_1, -1, "Combo Editable Element " + Str(I)) : Next
     SetGadgetState(#Combo_1, 0)
     
-    AddGadgetItem(#Panel_1, -1, "Tab_1")
+    AddGadgetItem(#Panel_1, -1, "Tab_1", ImageID(#Imag))
+    AddGadgetItem(#Panel_1, -1, "Tab_2", ImageID(#Imag))
     CloseGadgetList()   ; #Panel_1
   EndIf
 EndProcedure
@@ -134,10 +135,10 @@ EndProcedure
 Procedure Open_Window_2(X = 620, Y = 20, Width = 420, Height = 450)
   Protected I
   If OpenWindow(#Window_2, X, Y, Width, Height, "Demo ObjectColor Window_2", #PB_Window_MinimizeGadget | #PB_Window_SystemMenu)
-    SetWindowColor(#Window_2, $200808)
+    SetWindowColor(#Window_2, $180204)
     
     CompilerIf Defined(JellyButton, #PB_Procedure)
-      JellyButton(#PickColor_2, 20, 380, 380, 50, "Choose Color Window_2", $160404, #White, #PB_Button_Default)
+      JellyButton(#PickColor_2, 20, 380, 380, 50, "Choose Color Window_2", $180204, #White, #PB_Button_Default)
     CompilerElse
       ButtonGadget(#PickColor_2, 20, 380, 380, 50, "Choose Color Window_2", #PB_Button_Default)
     CompilerEndIf
@@ -182,7 +183,7 @@ Open_Window_1()
 Open_Window_2()
 
 ; Uncomment to Test DisableGadget 
-;     For I = 0 To 26 : DisableGadget(I, #True) : Next
+;     For I = 0 To 28 : DisableGadget(I, #True) : Next
 
 ;- Object Color functions :
 
