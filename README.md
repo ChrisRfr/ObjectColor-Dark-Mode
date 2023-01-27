@@ -31,12 +31,13 @@ Add: XIncludeFile "ObjectColor.pbi"<br>
 >  -- The new text color. RGB() can be used to get a valid color value.<br>
 >  -- #PB_Default = to go back to the default system text color.<br><br>
 For all gadgets with automatic background color and text color use: SetObjectColor()<br><br>
- - **SetDarkTheme(Gadget)**     : Enable DarkMode_Explorer Theme (> Windows 10) for: Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree<br> 
- - **SetExplorerTheme(Gadget)** : Enable Explorer Theme (> Vista) for the same Gadgets<br><br>
  - **SetObjectColorType([Type.s])**<br>
 > Type:<br>
 >  -- Without Type for all supported Gadget. It is done automatically if SetObjectColorType() is not used.<br>
 >  -- "NoEdit" for all supported Gadget except String and Editor.<br>
 > -- "ColorStatic" for CheckBox, Frame, Option and TrackBar only (WM_CTLCOLORSTATIC).<br>
 > -- 1 or multiple #PB_GadgetType_xxxxx separated by comma. The parameter is a String, so between quotes. Ex: SetObjectColorType("#PB_GadgetType_CheckBox, #PB_GadgetType_Option").<br><br>
+ - **SetDarkTheme(Gadget)**     : - Enable DarkMode_Explorer Theme (> Windows 10)<br><br>
+ - **SetExplorerTheme(Gadget)** : - Enable Explorer Theme (> Vista) for the same Gadgets<br><br>
+ Theme is applied for ComboBox, Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar and Tree Gadget<br><br> 
  - **To Debug** with the hierarchical list of gadgets with their colors, change the constant #DebugON = #True<br> 
