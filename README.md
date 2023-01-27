@@ -15,8 +15,8 @@ Set Gadget Background and Text Colors automatically based on the window's color 
 **For ButtonGadget**, you can use JellyButtons.pbi to get nice colored buttons. It is included in [IceDesign GUI Designer](https://github.com/ChrisRfr/IceDesign)<br>
 ## Usage:
 Add: XIncludeFile "ObjectColor.pbi"<br>
- - **SetDarkTheme()**     : Enable DarkMode_Explorer Theme (> Windows 10) for: Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree<br> 
- - **SetExplorerTheme()** : Enable Explorer Theme (> Vista) for the same Gadgets<br><br>
+ - **SetDarkTheme(Gadget)**     : Enable DarkMode_Explorer Theme (> Windows 10) for: Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree<br> 
+ - **SetExplorerTheme(Gadget)** : Enable Explorer Theme (> Vista) for the same Gadgets<br><br>
  - **SetObjectColorType([Type.s])**<br>
 > Type:<br>
 >  -- Without Type for all supported Gadget. It is done automatically if SetObjectColorType() is not used.<br>
