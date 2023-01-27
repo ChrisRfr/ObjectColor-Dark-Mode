@@ -1,43 +1,32 @@
+;- Top
 ; -------------------------------------------------------------------------------------------------
 ;        Name: ObjectColor.pbi
-; Description: Set Gadget Background and Text Colors automatically based on the window's color or parent container's color.
+; Description: Set the Gadget Background and Text Colors automatically based on the window's color or parent container's color.
 ;              Using #PB_Auto as a parameter for the background color, it automatically uses the parent container's color.
 ;              Using #PB_Auto as a parameter for the text color, it uses white or black color depending on the color of the parent container, light or dark.
+;              The theme "Explorer" or "DarkMode_Explorer" (Windows 10 and up) is automatically applied according to the background color of each Gadget for
+;                  ComboBox, Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree
 ;      Author: ChrisR
-;     Version: 1.2.6
-;        Date: 2022-05-08   (Creation Date: 2022-04-14)
-;  PB-Version: 5.73 x64/x86
+;     Version: 1.3.0
+;        Date: 2023-01-24   (Creation Date: 2022-04-14)
+;  PB-Version: 5.73 6.0 x64/x86
 ;          OS: Windows only
 ;      Credit: PB Forum, Rashad for his help: ComboBox WM_DRAWITEM example, Colored ListIcon Header,...
 ;       Forum: https://www.purebasic.fr/english/viewtopic.php?t=78966
-;        Note: If you want to keep the default Theme for CheckBoxes and Options, look at breeze4me's code, with the theme hook for the DrawThemeText function.
-;              CheckBox & Option Color Theme: https://www.purebasic.fr/english/viewtopic.php?p=583090#p583090
 ; -------------------------------------------------------------------------------------------------
 ; Supported gadget: Canvas Container, Calendar, CheckBox, ComboBox, Container, Date, Editor, ExplorerList, ExplorerTree, Frame, HyperLink, ListIcon, ListView,
 ;            Option, Panel, ProgressBar, ScrollArea, Spin, Splitter, String, Text, TrackBar, Tree
 ;
 ; Notes: For the ComboBoxGadget, #CBS_HASSTRINGS and #CBS_OWNERDRAWFIXED must be added at Combobox creation time, ex: ComboBoxGadget(#Gasdget,X,Y,W,H,#CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED)
 ;        To receive its events in the Window Callback and be drawn with the chosen colors.
-;        It does not work for ComboBox with #PB_ComboBox_Image constant, in this case do Not add #CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED
+;        It does not work for ComboBox with #PB_ComboBox_Image constant, in this case do Not add the constants #CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED
 ;
 ; For ButtonGadget, you can use JellyButtons.pbi to get nice colored buttons. It is included in IceDesign GUI Designer.
 ;
 ; -------------------------------------------------------------------------------------------------
-; Add: XIncludeFile ObjectColor.pbi
+; Add: XIncludeFile "ObjectColor.pbi"
 ;
 ;- Usages:
-;
-;   SetDarkTheme()     : Enable DarkMode_Explorer Theme (> Windows 10) for: Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree
-;   SetExplorerTheme() : Enable Explorer Theme (> Vista) for the same Gadgets
-;
-;
-;   SetObjectColorType([Type.s])
-;                 |
-;     Type.s:     | Without Type for all supported Gadget. It is done automatically if SetObjectColorType() is not used.
-;                 | "NoEdit" for all supported Gadget except String and Editor.
-;                 | "ColorStatic" for CheckBox, Frame, Option and TrackBar only (WM_CTLCOLORSTATIC).
-;                 | 1 or multiple #PB_GadgetType_xxxxx separated by comma. The parameter is a String, so between quotes. Ex: SetObjectColorType("#PB_GadgetType_CheckBox, #PB_GadgetType_Option").
-;
 ;
 ;   SetObjectColor([#Window, #Gadget, BackColor, TextColor])
 ;
@@ -57,6 +46,35 @@
 ;
 ;     For all gadgets with automatic background color and text color use: SetObjectColor()
 ;
+; ---------------------------------------------
+;
+;   SetObjectColorType([Type.s])   Optional
+;                 |
+;     Type.s:     | Without Type for all supported Gadget. It is done automatically if SetObjectColorType() is not used.
+;                 | "NoEdit" for all supported Gadget except String and Editor.
+;                 | "ColorStatic" for CheckBox, Frame, Option and TrackBar only (WM_CTLCOLORSTATIC).
+;                 | 1 or multiple #PB_GadgetType_xxxxx separated by comma. The parameter is a String, so between quotes. Ex: SetObjectColorType("#PB_GadgetType_CheckBox, #PB_GadgetType_Option").
+;
+;
+; ---------------------------------------------
+;
+;   The theme "Explorer" or "DarkMode_Explorer" (Windows 10 and up) is automatically applied according to the background color of each Gadget.
+;       Gadget supported: ComboBox, Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree
+;   However, after calling SetObjectColor(), you can change the applied theme by using one of the 2 macros below:
+;       For example, If you have a window With a Dark Background Color And a ScrollArea With a Light Color,
+;       By Default, the Light Theme will be applied for the ScollArea and its ScrollBars related To the ScrollArea color.
+;       But you may want to change it to a dark theme to match the window which is in dark color. It would be like this
+;           SetObjectColor(#PB_All, #PB_All, #Black)
+;           SetObjectColor(#Windows, #ScrollArea, #Gray)
+;           SetDarkTheme(#ScrollArea)
+;   
+;   SetDarkTheme(Gadget)           Optional
+;      Apply the "DarkMode_Explorer" Theme if the OSVersion >= Windows_10, otherwise the "Explorer" theme is applied
+;
+;   SetObjectTheme(Gadget) , "Explorer"
+;      Apply the "Explorer" Theme of the OSVersion >= Vista
+;
+; ---------------------------------------------
 ;
 ;   To Debug with the hierarchical list of gadgets with their colors, change the constant #DebugON = #True 
 ;
@@ -76,7 +94,7 @@ EnableExplicit
 
 ; Add: XIncludeFile "JellyButtons.pbi"  in your main code to add nice buttons
 
-Structure StObject
+Structure SObjectC
   Level.i             ; If Level = 1, Parent is a Window else a Gadget
   ObjectID.i
   Type.i
@@ -88,16 +106,13 @@ Structure StObject
   BackColor.i
   TextMode.i
   TextColor.i
-  Disabled.i          ; Only used for Static Controls: mainly for Frame and Text Gadget textcolor if disabled
+  OldProc.i
 EndStructure
-Global NewMap Object.StObject()
 
-Global NewMap ObjectType()
-Global NewMap OldProc()
-Global NewMap hBrush()
-
-Global Dim Window(1, 0)
-Global CountWindow
+Global NewMap ObjectC.SObjectC()
+Global NewMap ObjectCType()
+Global NewMap ObjectCBrush()
+Global Dim    WinObjectC(1, 0)
 
 Import ""
   CompilerIf Not(Defined(PB_Object_Count, #PB_Procedure))          : PB_Object_Count(PB_Gadget_Objects)                          : CompilerEndIf
@@ -111,10 +126,11 @@ EndImport
 
 ; GetParent
 Declare   IsContainerOC(Gadget)
-Declare   WindowCB(Window, *Window, WindowData)
+Declare   CountWinObjectC()
 Declare   ObjectCB(Object, *Object, ObjectData)
 Declare   WinHierarchy(ParentObjectID, ParentObject, FirstPassDone = #False)
-Declare   LoadObject()
+Declare   CleanUpCanvas()
+Declare   LoadObjectC()
 Declare   GetParent(Gadget)
 Declare   GetParentBackColor(Gadget)
 Declare   GetWindowRoot(Gadget)
@@ -133,14 +149,14 @@ Declare   BackDefaultColor()
 Declare   TextDefaultColor()
 Declare   SplitterCalc(hWnd, *rc.RECT)
 Declare   SplitterPaint(hWnd, hdc, *rc.RECT, BackColor, Gripper)
-Declare   SplitterExtCB(hWnd, uMsg, wParam, lParam)
+Declare   SplitterProc(hWnd, uMsg, wParam, lParam)
 Declare   ListIconProc(hWnd, uMsg, wParam, lParam)
 Declare   PanelProc(hWnd, uMsg, wParam, lParam)
 Declare   CalendarProc(hWnd, uMsg, wParam, lParam)
 Declare   EditorProc(hWnd, uMsg, wParam, lParam)
 Declare   StaticProc(hWnd, uMsg, wParam, lParam)
 Declare   WinCallback(hWnd, uMsg, wParam, lParam)
-Declare   SetObjectTheme(Theme.s)
+Declare   SetObjectTheme(Gadget, Theme.s)
 Declare.s GadgetTypeToString(Gadget)
 Declare   TypetoValue(Type.s)
 Declare   SetObjectColorType(Type.s = "", Value = 1)
@@ -148,17 +164,17 @@ Declare   ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
 Declare   LoopObjectColor(Window, ParentObject, BackGroundColor, FrontColor, FirstPassDone = #False)
 Declare   SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #PB_Auto, FrontColor = #PB_Auto)
 
-Macro SetDarkTheme()
+Macro SetDarkTheme(_Gadget_)
   If OSVersion() >= #PB_OS_Windows_10
-    SetObjectTheme("DarkMode_Explorer")
+    SetObjectTheme(_Gadget_, "DarkMode_Explorer")
   ElseIf OSVersion() >= #PB_OS_Windows_Vista
-    SetObjectTheme("Explorer")
+    SetObjectTheme(_Gadget_, "Explorer")
   EndIf
 EndMacro
 
-Macro SetExplorerTheme()
+Macro SetExplorerTheme(_Gadget_)
   If OSVersion() >= #PB_OS_Windows_Vista
-    SetObjectTheme("Explorer")
+    SetObjectTheme(_Gadget_, "Explorer")
   EndIf
 EndMacro
 
@@ -199,25 +215,30 @@ Procedure IsContainerOC(Gadget)
   ProcedureReturn #False
 EndProcedure
 
-Procedure WindowCB(Window, *Window, WindowData)
-  Window(0, CountWindow) = Window
-  Window(1, CountWindow) = WindowID(Window)
-  CountWindow + 1
-  ProcedureReturn #True
+Procedure CountWinObjectC()
+  Protected CountWinObjectC, I
+  For I = 0 To ArraySize(WinObjectC(), 2)
+    If WinObjectC(1, I)
+      CountWinObjectC + 1
+    EndIf
+  Next
+  ProcedureReturn CountWinObjectC
 EndProcedure
 
 Procedure ObjectCB(Object, *Object, ObjectData)
-  With Object(Str(Object))
-    \ObjectID        = GadgetID(Object)
-    \Type            = GadgetType(Object)
-    \IsContainer     = IsContainerOC(Object)
-    \ParentObjectID  = GetParent_(\ObjectID)
-    \GParentObjectID = GetParent_(\ParentObjectID)
-    \BackMode        = #PB_None
-    \TextMode        = #PB_None
-    \BackColor       = #PB_None
-    \TextColor       = #PB_None
-  EndWith
+  If FindMapElement(ObjectC(), Str(Object)) = 0
+    With ObjectC(Str(Object))
+      \ObjectID        = GadgetID(Object)
+      \Type            = GadgetType(Object)
+      \IsContainer     = IsContainerOC(Object)
+      \ParentObjectID  = GetParent_(\ObjectID)
+      \GParentObjectID = GetParent_(\ParentObjectID)
+      \BackMode        = #PB_None
+      \TextMode        = #PB_None
+      \BackColor       = #PB_None
+      \TextColor       = #PB_None
+    EndWith
+  EndIf
   ProcedureReturn #True
 EndProcedure
 
@@ -230,10 +251,10 @@ Procedure WinHierarchy(ParentObjectID, ParentObject, FirstPassDone = #False)
   EndIf
   
   Level + 1
-  PushMapPosition(Object())
-  ResetMap(Object())
-  With Object()
-    While NextMapElement(Object())
+  PushMapPosition(ObjectC())
+  ResetMap(ObjectC())
+  With ObjectC()
+    While NextMapElement(ObjectC())
       If Level > 1 And IsGadget(ParentObject) : ObjectType = GadgetType(ParentObject) : Else : ObjectType = 0 : EndIf
       If \ParentObjectID = ParentObjectID Or (\GParentObjectID = ParentObjectID And (ObjectType = #PB_GadgetType_Panel Or ObjectType = #PB_GadgetType_ScrollArea))
         \Level        = Level
@@ -241,31 +262,55 @@ Procedure WinHierarchy(ParentObjectID, ParentObject, FirstPassDone = #False)
         If Not(\ParentObjectID = ParentObjectID)
           \ParentObjectID   = \GParentObjectID
         EndIf
-        \GParentObjectID  = 0
+        If \OldProc = 0    ; To keep the gripper for Splitter saved in GParentObjectID in case of a new enumeration
+          \GParentObjectID  = 0
+        EndIf
         If \IsContainer
-          WinHierarchy(\ObjectID, Val(MapKey(Object())), FirstPassDone)
+          WinHierarchy(\ObjectID, Val(MapKey(ObjectC())), FirstPassDone)
           Level - 1
         EndIf
       EndIf
     Wend
   EndWith
-  PopMapPosition(Object())
+  PopMapPosition(ObjectC())
 EndProcedure
 
-Procedure LoadObject()
-  Protected I
-  CountWindow = PB_Object_Count(PB_Window_Objects)
-  ProcedureReturnIf(CountWindow = 0)
-  ReDim Window(1, CountWindow - 1)
-  CountWindow = 0
-  PB_Object_EnumerateAll(PB_Window_Objects, @WindowCB(), 0)
+Procedure CleanUpCanvas()
+  PushMapPosition(ObjectC())
+  ResetMap(ObjectC())
+  With ObjectC()
+    While NextMapElement(ObjectC())
+      If \Type = #PB_GadgetType_Canvas And \IsContainer = #False
+        DeleteMapElement(ObjectC())
+      EndIf
+    Wend
+  EndWith
+  PopMapPosition(ObjectC())
+EndProcedure
+
+Procedure LoadObjectC()
+  Protected window, CountWinObjectC, I
+  CountWinObjectC = PB_Object_Count(PB_Window_Objects)
+  ProcedureReturnIf(CountWinObjectC = 0)
+  ReDim WinObjectC(1, CountWinObjectC - 1)
+  
+  CountWinObjectC = 0
+  PB_Object_EnumerateStart(PB_Window_Objects)
+  While PB_Object_EnumerateNext(PB_Window_Objects, @window)
+    WinObjectC(0, CountWinObjectC) = Window
+    WinObjectC(1, CountWinObjectC) = WindowID(Window)
+    CountWinObjectC + 1
+  Wend
+  PB_Object_EnumerateAbort(PB_Window_Objects)
+  
   PB_Object_EnumerateAll(PB_Gadget_Objects, @ObjectCB(), 0)
   
-  If MapSize(Object()) > 0
+  CleanUpCanvas()
+  If MapSize(ObjectC()) > 0
     ; Pass through the hierarchy for each window
-    CountWindow = PB_Object_Count(PB_Window_Objects)
-    For I = 0 To CountWindow - 1
-      WinHierarchy(Window(1, I), Window(0, I))
+    CountWinObjectC = CountWinObjectC() - 1
+    For I = 0 To CountWinObjectC
+      WinHierarchy(WinObjectC(1, I), WinObjectC(0, I))
     Next
   Else
     ProcedureReturn #False
@@ -274,16 +319,19 @@ Procedure LoadObject()
 EndProcedure
 ;- ----- Private GetParent -----
 
+;-
 ;- ----- Public GetParent -----
 Procedure GetParent(Gadget)
   Protected ParentObject = #PB_Default
-  If MapSize(Object()) = 0 : LoadObject() : ProcedureReturnIf(CountWindow = 0) : EndIf
+  If MapSize(ObjectC()) = 0 : LoadObjectC() : ProcedureReturnIf(CountWinObjectC() = 0) : EndIf
   
-  PushMapPosition(Object())
-  If FindMapElement(Object(), Str(Gadget))
-    ParentObject = Object()\ParentObject
-  EndIf
-  PopMapPosition(Object())
+  With ObjectC()
+    PushMapPosition(ObjectC())
+    If FindMapElement(ObjectC(), Str(Gadget))
+      ParentObject = \ParentObject
+    EndIf
+    PopMapPosition(ObjectC())
+  EndWith
   
   ProcedureReturn ParentObject
 EndProcedure
@@ -291,88 +339,98 @@ EndProcedure
 Procedure GetParentBackColor(Gadget)
   Protected ParentObject, ParentIsWindow, BackColor = #PB_Default
   
-  PushMapPosition(Object())
-  If FindMapElement(Object(), Str(Gadget))
-    If Object()\Level = 1 : ParentIsWindow = #True : EndIf
-    ParentObject = Object()\ParentObject
-  EndIf
-  
-  If ParentIsWindow
-    BackColor = GetWindowColor(ParentObject)
-  ElseIf FindMapElement(Object(), Str(ParentObject))
-    BackColor = Object()\BackColor
-  EndIf
-  PopMapPosition(Object())
-  If BackColor = #PB_Default : BackColor = BackDefaultColor() : EndIf
+  With ObjectC()
+    PushMapPosition(ObjectC())
+    If FindMapElement(ObjectC(), Str(Gadget))
+      If \Level = 1 : ParentIsWindow = #True : EndIf
+      ParentObject = \ParentObject
+    EndIf
+    
+    If ParentIsWindow
+      BackColor = GetWindowColor(ParentObject)
+    ElseIf FindMapElement(ObjectC(), Str(ParentObject))
+      BackColor = \BackColor
+    EndIf
+    PopMapPosition(ObjectC())
+    If BackColor = #PB_Default : BackColor = BackDefaultColor() : EndIf
+  EndWith
   
   ProcedureReturn BackColor
 EndProcedure
 
 Procedure GetWindowRoot(Gadget)
   Protected ParentObject = Gadget
-  If MapSize(Object()) = 0 : LoadObject() : ProcedureReturnIf(CountWindow = 0) : EndIf
+  If MapSize(ObjectC()) = 0 : LoadObjectC() : ProcedureReturnIf(CountWinObjectC() = 0) : EndIf
   
-  PushMapPosition(Object())
-  Repeat
-    If FindMapElement(Object(), Str(ParentObject))
-      ParentObject = Object()\ParentObject
-    Else
-      ParentObject = #PB_Default
-      Break   ; It should not happen
-    EndIf
-  Until Object()\Level = 1
-  PopMapPosition(Object())
+  With ObjectC()
+    PushMapPosition(ObjectC())
+    Repeat
+      If FindMapElement(ObjectC(), Str(ParentObject))
+        ParentObject = \ParentObject
+      Else
+        ParentObject = #PB_Default
+        Break   ; It should not happen
+      EndIf
+    Until \Level = 1
+    PopMapPosition(ObjectC())
+  EndWith
   
   ProcedureReturn ParentObject
 EndProcedure
 
 Procedure GetParentID(Gadget)
   Protected ParentObjectID = #PB_Default
-  If MapSize(Object()) = 0 : LoadObject() : ProcedureReturnIf(CountWindow = 0) : EndIf
+  If MapSize(ObjectC()) = 0 : LoadObjectC() : ProcedureReturnIf(CountWinObjectC() = 0) : EndIf
   
-  PushMapPosition(Object())
-  If FindMapElement(Object(), Str(Gadget))
-    If Object()\Level = 1
-      ParentObjectID = WindowID(Object()\ParentObject)
-    Else
-      ParentObjectID = GadgetID(Object()\ParentObject)
+  With ObjectC()
+    PushMapPosition(ObjectC())
+    If FindMapElement(ObjectC(), Str(Gadget))
+      If \Level = 1
+        ParentObjectID = WindowID(\ParentObject)
+      Else
+        ParentObjectID = GadgetID(\ParentObject)
+      EndIf
     EndIf
-  EndIf
-  PopMapPosition(Object())
+    PopMapPosition(ObjectC())
+  EndWith
   
   ProcedureReturn ParentObjectID
 EndProcedure
 
 Procedure ParentIsWindow(Gadget)
   Protected Result = #PB_Default
-  If MapSize(Object()) = 0 : LoadObject() : ProcedureReturnIf(CountWindow = 0) : EndIf
+  If MapSize(ObjectC()) = 0 : LoadObjectC() : ProcedureReturnIf(CountWinObjectC() = 0) : EndIf
   
-  PushMapPosition(Object())
-  If FindMapElement(Object(), Str(Gadget))
-    If Object()\Level = 1
-      Result = #True
-    Else
-      Result = #False
+  With ObjectC()
+    PushMapPosition(ObjectC())
+    If FindMapElement(ObjectC(), Str(Gadget))
+      If \Level = 1
+        Result = #True
+      Else
+        Result = #False
+      EndIf
     EndIf
-  EndIf
-  PopMapPosition(Object())
+    PopMapPosition(ObjectC())
+  EndWith
   
   ProcedureReturn Result
 EndProcedure
 
 Procedure ParentIsGadget(Gadget)
   Protected Result = #PB_Default
-  If MapSize(Object()) = 0 : LoadObject() : ProcedureReturnIf(CountWindow = 0) : EndIf
+  If MapSize(ObjectC()) = 0 : LoadObjectC() : ProcedureReturnIf(CountWinObjectC() = 0) : EndIf
   
-  PushMapPosition(Object())
-  If FindMapElement(Object(), Str(Gadget))
-    If Object()\Level > 1
-      Result = #True
-    Else
-      Result = #False
+  With ObjectC()
+    PushMapPosition(ObjectC())
+    If FindMapElement(ObjectC(), Str(Gadget))
+      If \Level > 1
+        Result = #True
+      Else
+        Result = #False
+      EndIf
     EndIf
-  EndIf
-  PopMapPosition(Object())
+    PopMapPosition(ObjectC())
+  EndWith
   
   ProcedureReturn Result
 EndProcedure
@@ -381,43 +439,43 @@ Procedure CountChildGadgets(ParentObject, GrandChildren = #False, FirstPassDone 
   Static Level, Count
   Protected ReturnVal
   
-  If FirstPassDone = 0
-    If MapSize(Object()) = 0 : LoadObject() : ProcedureReturnIf(CountWindow = 0) : EndIf
-    If IsWindow(ParentObject)
-      Level = 0
-    ElseIf IsGadget(ParentObject)
-      PushMapPosition(Object())
-      If FindMapElement(Object(), Str(ParentObject))
-        If Not(Object()\IsContainer)
-          ReturnVal = #True
+  With ObjectC()
+    If FirstPassDone = 0
+      If MapSize(ObjectC()) = 0 : LoadObjectC() : ProcedureReturnIf(CountWinObjectC() = 0) : EndIf
+      If IsWindow(ParentObject)
+        Level = 0
+      ElseIf IsGadget(ParentObject)
+        PushMapPosition(ObjectC())
+        If FindMapElement(ObjectC(), Str(ParentObject))
+          If Not(\IsContainer)
+            ReturnVal = #True
+          EndIf
+          Level = \Level
         EndIf
-        Level = Object()\Level
+        PopMapPosition(ObjectC())
       EndIf
-      PopMapPosition(Object())
+      Count         = 0
+      FirstPassDone = #True
     EndIf
-    Count         = 0
-    FirstPassDone = #True
-  EndIf
-  
-  If ReturnVal
-    ProcedureReturn #PB_Default
-  EndIf
-  
-  Level + 1
-  PushMapPosition(Object())
-  ResetMap(Object())
-  With Object()
-    While NextMapElement(Object())
+    
+    If ReturnVal
+      ProcedureReturn #PB_Default
+    EndIf
+    
+    Level + 1
+    PushMapPosition(ObjectC())
+    ResetMap(ObjectC())
+    While NextMapElement(ObjectC())
       If \Level = Level And \ParentObject = ParentObject
         Count + 1
         If GrandChildren And \IsContainer
-          CountChildGadgets(Val(MapKey(Object())), GrandChildren, FirstPassDone)
+          CountChildGadgets(Val(MapKey(ObjectC())), GrandChildren, FirstPassDone)
           Level - 1
         EndIf
       EndIf
     Wend
+    PopMapPosition(ObjectC())
   EndWith
-  PopMapPosition(Object())
   
   ProcedureReturn Count
 EndProcedure
@@ -427,7 +485,7 @@ Procedure EnumWinChildColor(ParentObject, FirstPassDone = #False)
   Protected BackColor, ReturnVal
   
   If FirstPassDone = 0
-    If MapSize(Object()) = 0 : LoadObject() : ProcedureReturnIf(CountWindow = 0) : EndIf
+    If MapSize(ObjectC()) = 0 : LoadObjectC() : ProcedureReturnIf(CountWinObjectC() = 0) : EndIf
     If IsWindow(ParentObject)
       Level     = 0
       BackColor = GetWindowColor(ParentObject)
@@ -440,31 +498,31 @@ Procedure EnumWinChildColor(ParentObject, FirstPassDone = #False)
   EndIf
   
   Level + 1
-  PushMapPosition(Object())
-  ResetMap(Object())
-  With Object()
-    While NextMapElement(Object())
+  PushMapPosition(ObjectC())
+  ResetMap(ObjectC())
+  With ObjectC()
+    While NextMapElement(ObjectC())
       If \Level = Level And \ParentObject = ParentObject
-        Debug LSet("", \Level * 4 , " ") + LSet(GadgetTypeToString(Val(MapKey(Object()))), 14) + LSet(MapKey(Object()), 10) + "ParentGadget " + LSet(Str(\ParentObject), 10)  + "| GadgetID " + LSet(Str(\ObjectID), 10) + "ParentGadgetID " + LSet(Str(\ParentObjectID), 10) + "(Level = " + Str(\Level) + ")" +
+        Debug LSet("", \Level * 4 , " ") + LSet(GadgetTypeToString(Val(MapKey(ObjectC()))), 14) + LSet(MapKey(ObjectC()), 10) + "ParentGadget " + LSet(Str(\ParentObject), 10)  + "| GadgetID " + LSet(Str(\ObjectID), 10) + "ParentGadgetID " + LSet(Str(\ParentObjectID), 10) + "(Level = " + Str(\Level) + ")" +
               " - BackMode: " +Str(\BackMode) + " RGB(" + Red(\BackColor) + "," + Green(\BackColor) + "," + Blue(\BackColor) + ")" +
               " - TextMode: " +Str(\TextMode) + " RGB(" + Red(\TextColor) + "," + Green(\TextColor) + "," + Blue(\TextColor) + ")"
         If \IsContainer
-          EnumWinChildColor(Val(MapKey(Object())), FirstPassDone)
+          EnumWinChildColor(Val(MapKey(ObjectC())), FirstPassDone)
           Level - 1
         EndIf
       EndIf
     Wend
   EndWith
-  PopMapPosition(Object())
-  
+  PopMapPosition(ObjectC())
 EndProcedure
 
 Procedure EnumChildColor(Window = #PB_All)
-  ProcedureReturnIf(MapSize(Object()) = 0)
+  ProcedureReturnIf(MapSize(ObjectC()) = 0)
   Protected I
   If Window = #PB_All
-    For I = 0 To CountWindow - 1
-      EnumWinChildColor(Window(0, I))
+    Protected CountWinObjectC = CountWinObjectC() - 1
+    For I = 0 To CountWinObjectC
+      EnumWinChildColor(WinObjectC(0, I))
       Debug ""
     Next
   Else
@@ -589,62 +647,62 @@ Procedure SplitterPaint(hWnd, hdc, *rc.RECT, BackColor, Gripper)
   CompilerEndIf
 EndProcedure
 
-Procedure SplitterExtCB(hWnd, uMsg, wParam, lParam)
+Procedure SplitterProc(hWnd, uMsg, wParam, lParam)
   Protected Gadget = GetDlgCtrlID_(hWnd), BackColor, Gripper, Found, ps.PAINTSTRUCT
-  Protected OldSplitterProc = OldProc(Str(Gadget))
+  Protected OldSplitterProc = ObjectC(Str(Gadget))\OldProc
   
-  Select uMsg
-           
-    Case #WM_NCDESTROY
-      If FindMapElement(Object(), Str(Gadget))
-        If Object()\GParentObjectID : DeleteObject_(Object()\GParentObjectID) : EndIf   ; Delete the  Pattern Brush stored in GParentObjectID field
-        DeleteMapElement(Object())
-      EndIf
-      If FindMapElement(OldProc(), Str(Gadget))
-        SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
-        DeleteMapElement(OldProc())
-      EndIf
-      ; Delete map element for all children's gadgets that no longer exist
-      If MapSize(Object()) > 0
-        ResetMap(Object())
-        While NextMapElement(Object())
-          If Not(IsGadget(Val(MapKey(Object()))))
-            If FindMapElement(OldProc(), MapKey(Object()))
-              SetWindowLongPtr_(Object()\ObjectID, #GWLP_WNDPROC, OldProc())
-              DeleteMapElement(OldProc())
-            EndIf
-            DeleteMapElement(Object())
+  With ObjectC()
+    Select uMsg
+        
+      Case #WM_NCDESTROY
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If \GParentObjectID : DeleteObject_(\GParentObjectID) : EndIf   ; Delete the  Pattern Brush stored in GParentObjectID field
+          If \OldProc
+            SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, \OldProc)
           EndIf
-        Wend
-      EndIf
-      ;ProcedureReturn #False
-      
-    Case #WM_PAINT
-      PushMapPosition(Object())
-      If FindMapElement(Object(), Str(Gadget))
-        If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-          BackColor = Object()\BackColor
-          Gripper   = Object()\GParentObjectID
-          Found     = #True
+          DeleteMapElement(ObjectC())
         EndIf
-      EndIf
-      PopMapPosition(Object())
-      If Found = #False Or BackColor = #PB_None : ProcedureReturn CallWindowProc_(OldSplitterProc, hWnd, uMsg, wParam, lParam) : EndIf
-      
-      If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
-      BeginPaint_(hWnd, ps)
-      SplitterCalc(hWnd, ps\rcPaint)
-      SplitterPaint(hWnd, ps\hdc, ps\rcPaint, BackColor, Gripper)
-      EndPaint_(hWnd, ps)
-      ProcedureReturn #False
-      
-    Case #WM_ERASEBKGND
-      ProcedureReturn #True
-      
-    Case #WM_LBUTTONDBLCLK
-      PostEvent(#PB_Event_Gadget, EventWindow(), Gadget, #PB_EventType_LeftDoubleClick)
-      
-  EndSelect
+        ; Delete map element for all children's gadgets that no longer exist
+        If MapSize(ObjectC()) > 0
+          ResetMap(ObjectC())
+          While NextMapElement(ObjectC())
+            If Not(IsGadget(Val(MapKey(ObjectC()))))
+              If \OldProc
+                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
+              EndIf
+              DeleteMapElement(ObjectC())
+            EndIf
+          Wend
+        EndIf
+        ;ProcedureReturn #False
+        
+      Case #WM_PAINT
+        PushMapPosition(ObjectC())
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+            BackColor = \BackColor
+            Gripper   = \GParentObjectID
+            Found     = #True
+          EndIf
+        EndIf
+        PopMapPosition(ObjectC())
+        If Found = #False Or BackColor = #PB_None : ProcedureReturn CallWindowProc_(OldSplitterProc, hWnd, uMsg, wParam, lParam) : EndIf
+        
+        If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
+        BeginPaint_(hWnd, ps)
+        SplitterCalc(hWnd, ps\rcPaint)
+        SplitterPaint(hWnd, ps\hdc, ps\rcPaint, BackColor, Gripper)
+        EndPaint_(hWnd, ps)
+        ProcedureReturn #False
+        
+      Case #WM_ERASEBKGND
+        ProcedureReturn #True
+        
+      Case #WM_LBUTTONDBLCLK
+        PostEvent(#PB_Event_Gadget, EventWindow(), Gadget, #PB_EventType_LeftDoubleClick)
+        
+    EndSelect
+  EndWith
   
   ProcedureReturn CallWindowProc_(OldSplitterProc, hWnd, uMsg, wParam, lParam)
 EndProcedure
@@ -653,69 +711,70 @@ EndProcedure
 Procedure ListIconProc(hWnd, uMsg, wParam, lParam)
   Protected BackColor, TextColor, Text.s, Found
   Protected Gadget = GetDlgCtrlID_(hWnd), *pnmHDR.NMHDR, *pnmCDraw.NMCUSTOMDRAW
-  Protected Result = CallWindowProc_(OldProc(Str(Gadget)), hWnd, uMsg, wParam, lParam)
+  Protected Result = CallWindowProc_(ObjectC(Str(Gadget))\OldProc, hWnd, uMsg, wParam, lParam)
   
-  Select uMsg
-    Case #WM_NCDESTROY
-      If FindMapElement(Object(), Str(Gadget))
-        DeleteMapElement(Object())
-      EndIf
-      If FindMapElement(OldProc(), Str(Gadget))
-        SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
-        DeleteMapElement(OldProc())
-      EndIf
-      ;ProcedureReturn #False
-      
-    Case #WM_NOTIFY
-      *pnmHDR = lparam
-      If *pnmHDR\code = #NM_CUSTOMDRAW   ; Get handle to ListIcon and ExplorerList Header Control
-        
-        PushMapPosition(Object())
-        If FindMapElement(Object(), Str(Gadget))
-          If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-            BackColor = Object()\BackColor
-            TextColor = Object()\TextColor
-            Found     = #True
+  With ObjectC()
+    Select uMsg
+      Case #WM_NCDESTROY
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If \OldProc
+            SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, \OldProc)
           EndIf
+          DeleteMapElement(ObjectC())
         EndIf
-        PopMapPosition(Object())
-        If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+        ;ProcedureReturn #False
         
-        *pnmCDraw = lparam
-        Select *pnmCDraw\dwDrawStage   ; Determine drawing stage
-          Case #CDDS_PREPAINT
-            Result = #CDRF_NOTIFYITEMDRAW
-            
-          Case #CDDS_ITEMPREPAINT
-            If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + " Header: ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
-                                " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
-            Text = GetGadgetItemText(Gadget, -1, *pnmCDraw\dwItemSpec)
-            If *pnmCDraw\uItemState & #CDIS_SELECTED
-              DrawFrameControl_(*pnmCDraw\hdc, *pnmCDraw\rc, #DFC_BUTTON, #DFCS_BUTTONPUSH | #DFCS_PUSHED)
-              *pnmCDraw\rc\left + 1 : *pnmCDraw\rc\top + 1
-            Else
-              DrawFrameControl_(*pnmCDraw\hdc, *pnmCDraw\rc, #DFC_BUTTON, #DFCS_BUTTONPUSH)
+      Case #WM_NOTIFY
+        *pnmHDR = lparam
+        If *pnmHDR\code = #NM_CUSTOMDRAW   ; Get handle to ListIcon and ExplorerList Header Control
+          
+          PushMapPosition(ObjectC())
+          If FindMapElement(ObjectC(), Str(Gadget))
+            If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+              BackColor = \BackColor
+              TextColor = \TextColor
+              Found     = #True
             EndIf
-            *pnmCDraw\rc\bottom - 1 : *pnmCDraw\rc\right - 1
-            SetBkMode_(*pnmCDraw\hdc, #TRANSPARENT)
-            If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 40) : Else : BackColor = AccentColorOC(BackColor, -40) : EndIf
-            If Not(FindMapElement(hBrush(), Str(BackColor)))
-              hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
-            EndIf
-            FillRect_(*pnmCDraw\hdc, *pnmCDraw\rc, hBrush(Str(BackColor)))
-            If IsWindowEnabled_(GadgetID(Gadget)) = #False
-              If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
-            EndIf
-            SetTextColor_(*pnmCDraw\hdc, TextColor)
-            If *pnmCDraw\rc\right > *pnmCDraw\rc\left
-              DrawText_(*pnmCDraw\hdc, @Text, Len(Text), *pnmCDraw\rc, #DT_CENTER | #DT_VCENTER | #DT_SINGLELINE | #DT_END_ELLIPSIS)
-            EndIf
-            Result = #CDRF_SKIPDEFAULT
-            
-        EndSelect
-      EndIf
-      
-  EndSelect
+          EndIf
+          PopMapPosition(ObjectC())
+          If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+          
+          *pnmCDraw = lparam
+          Select *pnmCDraw\dwDrawStage   ; Determine drawing stage
+            Case #CDDS_PREPAINT
+              Result = #CDRF_NOTIFYITEMDRAW
+              
+            Case #CDDS_ITEMPREPAINT
+              If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + " Header: ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
+                                  " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
+              Text = GetGadgetItemText(Gadget, -1, *pnmCDraw\dwItemSpec)
+              If *pnmCDraw\uItemState & #CDIS_SELECTED
+                DrawFrameControl_(*pnmCDraw\hdc, *pnmCDraw\rc, #DFC_BUTTON, #DFCS_BUTTONPUSH | #DFCS_PUSHED)
+                *pnmCDraw\rc\left + 1 : *pnmCDraw\rc\top + 1
+              Else
+                DrawFrameControl_(*pnmCDraw\hdc, *pnmCDraw\rc, #DFC_BUTTON, #DFCS_BUTTONPUSH)
+              EndIf
+              *pnmCDraw\rc\bottom - 1 : *pnmCDraw\rc\right - 1
+              SetBkMode_(*pnmCDraw\hdc, #TRANSPARENT)
+              If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 40) : Else : BackColor = AccentColorOC(BackColor, -40) : EndIf
+              If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
+                ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+              EndIf
+              FillRect_(*pnmCDraw\hdc, *pnmCDraw\rc, ObjectCBrush(Str(BackColor)))
+              If IsWindowEnabled_(GadgetID(Gadget)) = #False
+                If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
+              EndIf
+              SetTextColor_(*pnmCDraw\hdc, TextColor)
+              If *pnmCDraw\rc\right > *pnmCDraw\rc\left
+                DrawText_(*pnmCDraw\hdc, @Text, Len(Text), *pnmCDraw\rc, #DT_CENTER | #DT_VCENTER | #DT_SINGLELINE | #DT_END_ELLIPSIS)
+              EndIf
+              Result = #CDRF_SKIPDEFAULT
+              
+          EndSelect
+        EndIf
+        
+    EndSelect
+  EndWith
   
   ProcedureReturn Result
 EndProcedure
@@ -723,527 +782,534 @@ EndProcedure
 Procedure PanelProc(hWnd, uMsg, wParam, lParam)
   Protected BackColor, ParentBackColor, Found
   Protected Gadget = GetDlgCtrlID_(hWnd), *DrawItem.DRAWITEMSTRUCT, Rect.Rect 
-  Protected OldPanelProc = OldProc(Str(Gadget))
+  Protected OldPanelProc = ObjectC(Str(Gadget))\OldProc
   
-  Select uMsg
-    Case #WM_NCDESTROY
-      If FindMapElement(Object(), Str(Gadget))
-        DeleteMapElement(Object())
-      EndIf
-      If FindMapElement(OldProc(), Str(Gadget))
-        SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
-        DeleteMapElement(OldProc())
-      EndIf
-      ; Delete map element for all children's gadgets that no longer exist
-      If MapSize(Object()) > 0
-        ResetMap(Object())
-        While NextMapElement(Object())
-          If Not(IsGadget(Val(MapKey(Object()))))
-            If FindMapElement(OldProc(), MapKey(Object()))
-              SetWindowLongPtr_(Object()\ObjectID, #GWLP_WNDPROC, OldProc())
-              DeleteMapElement(OldProc())
-            EndIf
-            DeleteMapElement(Object())
+  With ObjectC()
+    Select uMsg
+      Case #WM_NCDESTROY
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If \OldProc
+            SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, \OldProc)
           EndIf
-        Wend
-      EndIf
-      ;ProcedureReturn #False
-           
-    Case #WM_ERASEBKGND
-      PushMapPosition(Object())
-      If FindMapElement(Object(), Str(Gadget))
-        If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-          BackColor = Object()\BackColor
-          Found     = #True
+          DeleteMapElement(ObjectC())
         EndIf
-      EndIf
-      PopMapPosition(Object())
-      If Found = #False Or BackColor = #PB_None : ProcedureReturn CallWindowProc_(OldPanelProc, hWnd, uMsg, wParam, lParam) : EndIf
-      
-      If #DebugON : Debug "WM_ERASEBKGND " + LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
-      *DrawItem.DRAWITEMSTRUCT = wParam
-      ; Protected PanelImgList = SendMessage_(hWnd, #TCM_GETIMAGELIST, 0, 0)
-      GetClientRect_(hWnd, Rect)
-      If Not(FindMapElement(hBrush(), Str(BackColor)))
-        hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
-      EndIf
-      FillRect_(wParam, @Rect, hBrush(Str(BackColor)))
-      ParentBackColor  = GetParentBackColor(Gadget)
-      If Not(FindMapElement(hBrush(), Str(ParentBackColor)))
-        hBrush(Str(ParentBackColor)) = CreateSolidBrush_(ParentBackColor)
-      EndIf
-      Rect\top = 0 : Rect\bottom = GetGadgetAttribute(Gadget, #PB_Panel_TabHeight)
-      FillRect_(wParam, @Rect, hBrush(Str(ParentBackColor)))
-      ProcedureReturn #True
-      
-  EndSelect
+        ; Delete map element for all children's gadgets that no longer exist
+        If MapSize(ObjectC()) > 0
+          ResetMap(ObjectC())
+          While NextMapElement(ObjectC())
+            If Not(IsGadget(Val(MapKey(ObjectC()))))
+              If \OldProc
+                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
+              EndIf
+              DeleteMapElement(ObjectC())
+            EndIf
+          Wend
+        EndIf
+        ;ProcedureReturn #False
+        
+      Case #WM_ENABLE
+        InvalidateRect_(hWnd, #Null, #True)
+        ProcedureReturn #True
+        
+      Case #WM_ERASEBKGND
+        PushMapPosition(ObjectC())
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+            BackColor = \BackColor
+            Found     = #True
+          EndIf
+        EndIf
+        PopMapPosition(ObjectC())
+        If Found = #False Or BackColor = #PB_None : ProcedureReturn CallWindowProc_(OldPanelProc, hWnd, uMsg, wParam, lParam) : EndIf
+        
+        ;If #DebugON : Debug "WM_ERASEBKGND " + LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
+        *DrawItem.DRAWITEMSTRUCT = wParam
+        ; Protected PanelImgList = SendMessage_(hWnd, #TCM_GETIMAGELIST, 0, 0)
+        GetClientRect_(hWnd, Rect)
+        If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
+          ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+        EndIf
+        FillRect_(wParam, @Rect, ObjectCBrush(Str(BackColor)))
+        ParentBackColor  = GetParentBackColor(Gadget)
+        If Not(FindMapElement(ObjectCBrush(), Str(ParentBackColor)))
+          ObjectCBrush(Str(ParentBackColor)) = CreateSolidBrush_(ParentBackColor)
+        EndIf
+        Rect\top = 0 : Rect\bottom = GetGadgetAttribute(Gadget, #PB_Panel_TabHeight)
+        FillRect_(wParam, @Rect, ObjectCBrush(Str(ParentBackColor)))
+        ProcedureReturn #True
+        
+    EndSelect
+  EndWith
   
   ProcedureReturn CallWindowProc_(OldPanelProc, hWnd, uMsg, wParam, lParam)
 EndProcedure
 
 Procedure CalendarProc(hWnd, uMsg, wParam, lParam)
   Protected Gadget = GetDlgCtrlID_(hWnd), TextColor, Found
-  Protected Result = CallWindowProc_(OldProc(Str(Gadget)), hWnd, uMsg, wParam, lParam)
+  Protected Result = CallWindowProc_(ObjectC(Str(Gadget))\OldProc, hWnd, uMsg, wParam, lParam)
   
-  Select uMsg
-    Case #WM_NCDESTROY
-      If FindMapElement(Object(), Str(Gadget))
-        DeleteMapElement(Object())
-      EndIf
-      If FindMapElement(OldProc(), Str(Gadget))
-        SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
-        DeleteMapElement(OldProc())
-      EndIf
-      ;ProcedureReturn #False
-      
-    Case #WM_ENABLE
-      PushMapPosition(Object())
-      If FindMapElement(Object(), Str(Gadget))
-        If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-          TextColor = Object()\TextColor
-          If wParam : Object()\Disabled = #False : Else : Object()\Disabled = #True : EndIf
-          Found = #True
+  With ObjectC()
+    Select uMsg
+      Case #WM_NCDESTROY
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If \OldProc
+            SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, \OldProc)
+          EndIf
+          DeleteMapElement(ObjectC())
         EndIf
-      EndIf
-      PopMapPosition(Object())
-      If Found = #False Or TextColor = #PB_None : ProcedureReturn Result : EndIf
-      
-      If wParam = #False
-        If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
-      EndIf
-      SendMessage_(hWnd, #MCM_SETCOLOR, #MCSC_TEXT, TextColor)
-      SendMessage_(hWnd, #MCM_SETCOLOR, #MCSC_TITLETEXT, TextColor)
-      SendMessage_(hWnd, #MCM_SETCOLOR, #MCSC_TRAILINGTEXT, TextColor)
-      ProcedureReturn #False
-      
-  EndSelect
+        ;ProcedureReturn #False
+        
+      Case #WM_ENABLE
+        PushMapPosition(ObjectC())
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+            TextColor = \TextColor
+            Found = #True
+          EndIf
+        EndIf
+        PopMapPosition(ObjectC())
+        If Found = #False Or TextColor = #PB_None : ProcedureReturn Result : EndIf
+        
+        If wParam = #False
+          If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
+        EndIf
+        SendMessage_(hWnd, #MCM_SETCOLOR, #MCSC_TEXT, TextColor)
+        SendMessage_(hWnd, #MCM_SETCOLOR, #MCSC_TITLETEXT, TextColor)
+        SendMessage_(hWnd, #MCM_SETCOLOR, #MCSC_TRAILINGTEXT, TextColor)
+        ProcedureReturn #False
+        
+    EndSelect
+  EndWith
   
   ProcedureReturn Result
 EndProcedure
 
 Procedure EditorProc(hWnd, uMsg, wParam, lParam)
   Protected Gadget = GetDlgCtrlID_(hWnd), BackColor, TextColor, Found, Rect.RECT
-  Protected Result = CallWindowProc_(OldProc(Str(Gadget)), hWnd, uMsg, wParam, lParam)
+  Protected Result = CallWindowProc_(ObjectC(Str(Gadget))\OldProc, hWnd, uMsg, wParam, lParam)
   
-  Select uMsg
-    Case #WM_NCDESTROY
-      If FindMapElement(Object(), Str(Gadget))
-        DeleteMapElement(Object())
-      EndIf
-      If FindMapElement(OldProc(), Str(Gadget))
-        SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
-        DeleteMapElement(OldProc())
-      EndIf
-      ;ProcedureReturn #False
-      
-    Case #WM_ENABLE
-      PushMapPosition(Object())
-      If FindMapElement(Object(), Str(Gadget))
-        If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-          TextColor = Object()\TextColor
-          If wParam : Object()\Disabled = #False : Else : Object()\Disabled = #True : EndIf
-          Found = #True
+  With ObjectC()
+    Select uMsg
+      Case #WM_NCDESTROY
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If \OldProc
+            SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, \OldProc)
+          EndIf
+          DeleteMapElement(ObjectC())
         EndIf
-      EndIf
-      PopMapPosition(Object())
-      If Found = #False Or TextColor = #PB_None : ProcedureReturn Result : EndIf
-      
-      If wParam
-        SetWindowLongPtr_(GadgetID(Gadget), #GWL_EXSTYLE, GetWindowLongPtr_(GadgetID(Gadget), #GWL_EXSTYLE) &~ #WS_EX_TRANSPARENT)
-        SetGadgetColor(Gadget, #PB_Gadget_FrontColor, TextColor)
-      Else
-        SetWindowLongPtr_(GadgetID(Gadget), #GWL_EXSTYLE, GetWindowLongPtr_(GadgetID(Gadget), #GWL_EXSTYLE) | #WS_EX_TRANSPARENT)
-        If IsDarkColorOC(TextColor) : SetGadgetColor(Gadget, #PB_Gadget_FrontColor, $909090) : Else : SetGadgetColor(Gadget, #PB_Gadget_FrontColor, $707070) : EndIf
-      EndIf
-      ProcedureReturn #False
-      
-    Case #WM_ERASEBKGND
-      PushMapPosition(Object())
-      If FindMapElement(Object(), Str(Gadget))
-        If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-          BackColor = Object()\BackColor
-          Found     = #True
+        ;ProcedureReturn #False
+        
+      Case #WM_ENABLE
+        PushMapPosition(ObjectC())
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+            TextColor = \TextColor
+            Found = #True
+          EndIf
         EndIf
-      EndIf
-      PopMapPosition(Object())
-      If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
-      
-      CompilerIf #EditAccentColor
-        If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 10) : Else : BackColor = AccentColorOC(BackColor, -10) : EndIf
-      CompilerEndIf
-      If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
-      GetClientRect_(hWnd, Rect)
-      If Not(FindMapElement(hBrush(), Str(BackColor)))
-        hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
-      EndIf
-      FillRect_(wParam, @Rect, hBrush(Str(BackColor)))
-      ProcedureReturn #True
-      
-  EndSelect
+        PopMapPosition(ObjectC())
+        If Found = #False Or TextColor = #PB_None : ProcedureReturn Result : EndIf
+        
+        If wParam
+          SetWindowLongPtr_(GadgetID(Gadget), #GWL_EXSTYLE, GetWindowLongPtr_(GadgetID(Gadget), #GWL_EXSTYLE) &~ #WS_EX_TRANSPARENT)
+          SetGadgetColor(Gadget, #PB_Gadget_FrontColor, TextColor)
+        Else
+          SetWindowLongPtr_(GadgetID(Gadget), #GWL_EXSTYLE, GetWindowLongPtr_(GadgetID(Gadget), #GWL_EXSTYLE) | #WS_EX_TRANSPARENT)
+          If IsDarkColorOC(TextColor) : SetGadgetColor(Gadget, #PB_Gadget_FrontColor, $909090) : Else : SetGadgetColor(Gadget, #PB_Gadget_FrontColor, $707070) : EndIf
+        EndIf
+        ProcedureReturn #False
+        
+      Case #WM_ERASEBKGND
+        PushMapPosition(ObjectC())
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+            BackColor = \BackColor
+            Found     = #True
+          EndIf
+        EndIf
+        PopMapPosition(ObjectC())
+        If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+        
+        CompilerIf #EditAccentColor
+          If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 10) : Else : BackColor = AccentColorOC(BackColor, -10) : EndIf
+        CompilerEndIf
+        If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
+        GetClientRect_(hWnd, Rect)
+        If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
+          ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+        EndIf
+        FillRect_(wParam, @Rect, ObjectCBrush(Str(BackColor)))
+        ProcedureReturn #True
+        
+    EndSelect
+  EndWith
   
   ProcedureReturn Result
 EndProcedure
 
 Procedure StaticProc(hWnd, uMsg, wParam, lParam)
   Protected Gadget = GetDlgCtrlID_(hWnd), TextColor
-  Protected Result = CallWindowProc_(OldProc(Str(Gadget)), hWnd, uMsg, wParam, lParam)
+  Protected Result = CallWindowProc_(ObjectC(Str(Gadget))\OldProc, hWnd, uMsg, wParam, lParam)
   
-  Select uMsg
-    Case #WM_NCDESTROY
-      If FindMapElement(Object(), Str(Gadget))
-        DeleteMapElement(Object())
-      EndIf
-      If FindMapElement(OldProc(), Str(Gadget))
-        SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, OldProc())
-        DeleteMapElement(OldProc())
-      EndIf
-      ;ProcedureReturn #False
-      
-    Case #WM_ENABLE
-      PushMapPosition(Object())
-      If FindMapElement(Object(), Str(Gadget))
-        Select GadgetType(Gadget)
-          Case #PB_GadgetType_CheckBox, #PB_GadgetType_Option, #PB_GadgetType_TrackBar
-            If wParam
-              Object()\Disabled = #False
-              SetWindowTheme_(hWnd, "", "")
-            Else
-              Object()\Disabled = #True
-              SetWindowTheme_(hWnd, "", 0)
-            EndIf
-          Case #PB_GadgetType_Frame, #PB_GadgetType_Text
-            If wParam
-              Object()\Disabled = #False
-            Else
-              EnableWindow_(hWnd, #True)
-              Object()\Disabled = #True   ; To do after EnableWindow_() to get the disabled status
-            EndIf
-        EndSelect
-      EndIf
-      PopMapPosition(Object())
-      ProcedureReturn #False
-      
-  EndSelect
+  With ObjectC()
+    Select uMsg
+      Case #WM_NCDESTROY
+        If FindMapElement(ObjectC(), Str(Gadget))
+          If \OldProc
+            SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, \OldProc)
+          EndIf
+          DeleteMapElement(ObjectC())
+        EndIf
+        ;ProcedureReturn #False
+        
+      Case #WM_ENABLE
+        PushMapPosition(ObjectC())
+        If FindMapElement(ObjectC(), Str(Gadget))
+          Select GadgetType(Gadget)
+            Case #PB_GadgetType_CheckBox, #PB_GadgetType_Option, #PB_GadgetType_TrackBar
+              If wParam
+                SetWindowTheme_(hWnd, "", "")
+              Else
+                SetWindowTheme_(hWnd, "", 0)
+              EndIf
+            Case #PB_GadgetType_Frame, #PB_GadgetType_Text
+          EndSelect
+        EndIf
+        PopMapPosition(ObjectC())
+        ProcedureReturn #False
+        
+    EndSelect
+  EndWith
   
   ProcedureReturn Result
 EndProcedure
 
 Procedure WinCallback(hWnd, uMsg, wParam, lParam)
   Protected Result = #PB_ProcessPureBasicEvents
-  Protected Gadget, ParentGadget, Buffer.s, Text.s, BackColor, TextColor, Disabled, Color_HightLight, FadeGrayColor, Found, I
+  Protected Gadget, ParentGadget, Buffer.s, Text.s, BackColor, TextColor, Color_HightLight, FadeGrayColor, Found, I
   Protected *NMDATETIMECHANGE.NMDATETIMECHANGE, *DrawItem.DRAWITEMSTRUCT, *lvCD.NMLVCUSTOMDRAW
   
-  Select uMsg
-    Case #WM_CLOSE
-      PostEvent(#PB_Event_Gadget, GetDlgCtrlID_(hWnd), 0, #PB_Event_CloseWindow)   ; Required to manage it with #PB_Event_CloseWindow event, if the window is minimized and closed from the taskbar (Right CLick)
-      
-    Case #WM_NCDESTROY
-      ; Delete map element for all children's gadgets that no longer exist after CloseWindow(). Useful in case of multiple windows
-      If MapSize(Object()) > 0
-        ResetMap(Object())
-        While NextMapElement(Object())
-          If Not(IsGadget(Val(MapKey(Object()))))
-            If FindMapElement(OldProc(), MapKey(Object()))
-              SetWindowLongPtr_(Object()\ObjectID, #GWLP_WNDPROC, OldProc())
-              DeleteMapElement(OldProc())
-            EndIf
-            DeleteMapElement(Object())
-          EndIf
-        Wend
-      EndIf
-      ; Delete all brushes and map element. If there are used brushes in other windows, they will be recreated
-      If MapSize(hBrush()) > 0
-        ResetMap(hBrush())
-        While NextMapElement(hBrush())
-          DeleteObject_(hBrush())
-          DeleteMapElement(hBrush())
-        Wend
-      EndIf
-      ;ProcedureReturn #False
-      
-      ; Case #WM_SIZE
-      ;   If wParam = #SIZE_RESTORED   ; Not sure if there is a need to RedrawWindow()
-      ;     For I = 0 To CountWindow - 1
-      ;       If Window(1, I) = hWnd
-      ;         RedrawWindow_(hWnd, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_ALLCHILDREN | #RDW_UPDATENOW)
-      ;         Break
-      ;       EndIf
-      ;     Next
-      ;   EndIf
+  With ObjectC()
+    Select uMsg
+      Case #WM_CLOSE
+        PostEvent(#PB_Event_Gadget, GetDlgCtrlID_(hWnd), 0, #PB_Event_CloseWindow)   ; Required to manage it with #PB_Event_CloseWindow event, if the window is minimized and closed from the taskbar (Right CLick)
         
-      ; Case #WM_ACTIVATE              ; Not sure if there is a need to RedrawWindow()
-      ;   If wParam
-      ;     For I = 0 To CountWindow - 1
-      ;       If Window(1, I) = hWnd
-      ;         RedrawWindow_(hWnd, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_ALLCHILDREN | #RDW_UPDATENOW)
-      ;         Break
-      ;       EndIf
-      ;     Next
-      ;   EndIf
-      
-    Case #WM_CTLCOLORSTATIC   ; For CheckBoxGadget, FrameGadget, OptionGadget, TextGadget, TrackBarGadget
-      Gadget = GetDlgCtrlID_(lparam)
-      PushMapPosition(Object())
-      If FindMapElement(Object(), Str(Gadget))
-        If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-          BackColor = Object()\BackColor
-          TextColor = Object()\TextColor
-          Disabled  = Object()\Disabled
-          Found     = #True
-        EndIf
-      EndIf
-      PopMapPosition(Object())
-      If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
-      
-      If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
-                          " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
-      If Disabled
-        If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
-      EndIf
-      SetTextColor_(wParam, TextColor)
-      SetBkMode_(wParam, #TRANSPARENT)
-      If Not(FindMapElement(hBrush(), Str(BackColor)))
-        hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
-      EndIf
-      ProcedureReturn hBrush(Str(BackColor))
-      
-      ; Case #WM_CTLCOLORBTN         ; Button
-      ; Case #WM_CTLCOLORDLG
-      ; Case #WM_CTLCOLOREDIT        ; Combo, Spin, String
-      ; Case #WM_CTLCOLORLISTBOX     ; ListView
-      ; Case #WM_CTLCOLORSCROLLBAR   ; Scrlbar
-      
-    Case #WM_CTLCOLOREDIT
-      ParentGadget = GetParent_(lParam)
-      Buffer = Space(64)
-      If GetClassName_(ParentGadget, @Buffer, 64)
-        If Buffer = "ComboBox"
-          Gadget = GetDlgCtrlID_(ParentGadget)
-          PushMapPosition(Object())
-          If FindMapElement(Object(), Str(Gadget))
-            If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-              BackColor = Object()\BackColor
-              TextColor = Object()\TextColor
-              Disabled  = Object()\Disabled
-              Found     = #True
-            EndIf
-          EndIf
-          PopMapPosition(Object())
-          If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
-          
-          CompilerIf #EditAccentColor
-            If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 10) : Else : BackColor = AccentColorOC(BackColor, -10) : EndIf
-          CompilerEndIf
-          If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
-                              " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
-          If Disabled
-            If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
-          EndIf
-          If Gadget <> GetActiveGadget()
-            SendMessage_(lParam, #EM_SETSEL, 0, 0)   ; Deselect the ComboBox editable string if not the active Gadget
-          EndIf
-          SetTextColor_(wParam, TextColor)
-          SetBkMode_(wParam, #TRANSPARENT)
-          ;SetBkColor_(wParam, BackColor)
-          If Not(FindMapElement(hBrush(), Str(BackColor)))
-            hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
-          EndIf
-          ProcedureReturn hBrush(Str(BackColor))
-          
-        EndIf
-      EndIf
-
-    Case #WM_DRAWITEM   ; For ComboBoxGadget and PanelGadget
-      *DrawItem.DRAWITEMSTRUCT = lParam
-      With *DrawItem
-        If \CtlType = #ODT_COMBOBOX
-          Gadget = wParam
-          PushMapPosition(Object())
-          If FindMapElement(Object(), Str(Gadget))
-            If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-              BackColor = Object()\BackColor
-              TextColor = Object()\TextColor
-              Found     = #True
-            EndIf
-          EndIf
-          PopMapPosition(Object())
-          If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
-          
-          If \itemID <> -1
-            If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
-                                " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
-            If \itemstate & #ODS_SELECTED
-              Color_HightLight = GetSysColor_(#COLOR_HIGHLIGHT)
-              If Not(FindMapElement(hBrush(), Str(Color_HightLight)))
-                hBrush(Str(Color_HightLight)) = CreateSolidBrush_(Color_HightLight)
+      Case #WM_NCDESTROY
+        ; Delete map element for all children's gadgets that no longer exist after CloseWindow(). Useful in case of multiple windows
+        If MapSize(ObjectC()) > 0
+          ResetMap(ObjectC())
+          While NextMapElement(ObjectC())
+            If Not(IsGadget(Val(MapKey(ObjectC()))))
+              If \OldProc
+                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
               EndIf
-              FillRect_(\hDC, \rcitem, hBrush(Str(Color_HightLight)))
-            Else
-              If Not(FindMapElement(hBrush(), Str(BackColor)))
-                hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
-              EndIf
-              FillRect_(\hDC, \rcitem, hBrush(Str(BackColor)))
+              DeleteMapElement(ObjectC())
             EndIf
-            
-            SetBkMode_(\hDC, #TRANSPARENT)
-            ;If \itemID = 0 : ; Example for Icon : DrawIconEx_(\hDC, \rcItem\left + 2, \rcItem\top + 6, icon1, iconsize, iconsize, 0, 0, #DI_NORMAL) : EndIf
-            If IsWindowEnabled_(GadgetID(Gadget)) = #False
-              If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
-            EndIf
-            SetTextColor_(\hDC, TextColor)
-            Text = GetGadgetItemText(\CtlID, \itemID)
-            \rcItem\left + DesktopScaledX(4)
-            DrawText_(\hDC, Text, Len(Text), \rcItem, #DT_LEFT | #DT_SINGLELINE | #DT_VCENTER)
-          EndIf
+          Wend
         EndIf
+        ; Delete all brushes and map element. If there are used brushes in other windows, they will be recreated
+        If MapSize(ObjectCBrush()) > 0
+          ResetMap(ObjectCBrush())
+          While NextMapElement(ObjectCBrush())
+            DeleteObject_(ObjectCBrush())
+            DeleteMapElement(ObjectCBrush())
+          Wend
+        EndIf
+        ;ProcedureReturn #False
         
-        If \CtlType = #ODT_TAB
-          Gadget = GetDlgCtrlID_(\hwndItem)
-          PushMapPosition(Object())
-          If FindMapElement(Object(), Str(Gadget))
-            If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-              BackColor = Object()\BackColor
-              TextColor = Object()\TextColor
+        ; Case #WM_SIZE
+        ;   If wParam = #SIZE_RESTORED   ; Not sure if there is a need to RedrawWindow()
+        ;     For I = 0 To CountWinObjectC() - 1
+        ;       If WinObjectC(1, I) = hWnd
+        ;         RedrawWindow_(hWnd, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_ALLCHILDREN | #RDW_UPDATENOW)
+        ;         Break
+        ;       EndIf
+        ;     Next
+        ;   EndIf
+        
+        ; Case #WM_ACTIVATE              ; Not sure if there is a need to RedrawWindow()
+        ;   If wParam
+        ;     For I = 0 To CountWinObjectC() - 1
+        ;       If WinObjectC(1, I) = hWnd
+        ;         RedrawWindow_(hWnd, #Null, #Null, #RDW_INVALIDATE | #RDW_ERASE | #RDW_ALLCHILDREN | #RDW_UPDATENOW)
+        ;         Break
+        ;       EndIf
+        ;     Next
+        ;   EndIf
+        
+      Case #WM_CTLCOLORSTATIC   ; For CheckBoxGadget, FrameGadget, OptionGadget, TextGadget, TrackBarGadget
+        Gadget = GetDlgCtrlID_(lparam)
+        If IsGadget(Gadget)
+          PushMapPosition(ObjectC())
+          If FindMapElement(ObjectC(), Str(Gadget))
+            If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+              BackColor = \BackColor
+              TextColor = \TextColor
               Found     = #True
             EndIf
           EndIf
-          PopMapPosition(Object())
+          PopMapPosition(ObjectC())
           If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
           
           If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
                               " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
-          If \itemState
-            If Not(FindMapElement(hBrush(), Str(BackColor)))
-              hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
-            EndIf
-            \rcItem\left + 2
-            FillRect_(\hDC, \rcItem, hBrush(Str(BackColor)))
-          Else
-            If IsDarkColorOC(BackColor)
-              FadeGrayColor = FadeColorOC(BackColor, 40, AccentColorOC(BackColor, 80))
-            Else
-              FadeGrayColor = FadeColorOC(BackColor, 40, AccentColorOC(BackColor, -80))
-            EndIf
-            If Not(FindMapElement(hBrush(), Str(FadeGrayColor)))
-              hBrush(Str(FadeGrayColor)) = CreateSolidBrush_(FadeGrayColor)
-            EndIf
-            \rcItem\top + 2 : \rcItem\bottom + 3   ; Default: \rcItem\bottom + 2 . +3 to decrease the size of the bottom line
-            FillRect_(\hDC, \rcItem, hBrush(Str(FadeGrayColor)))
-          EndIf
           
-          SetBkMode_(\hDC, #TRANSPARENT)
           If IsWindowEnabled_(GadgetID(Gadget)) = #False
             If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
           EndIf
-          SetTextColor_(\hDC, TextColor)
-          Text = GetGadgetItemText(Gadget, \itemID)
-          \rcItem\left + DesktopScaledX(4)
-          ;TextOut_(\hDC, \rcItem\left, \rcItem\top, Text, Len(Text))
-          DrawText_(\hDC, @Text, Len(Text), @\rcItem, #DT_LEFT | #DT_VCENTER | #DT_SINGLELINE)
-          ProcedureReturn #True
+          SetTextColor_(wParam, TextColor)
+          SetBkMode_(wParam, #TRANSPARENT)
+          If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
+            ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+          EndIf
+          ProcedureReturn ObjectCBrush(Str(BackColor))
         EndIf
-      EndWith
-      
-    Case #WM_NOTIFY   ; For DateGadget
-      *NMDATETIMECHANGE.NMDATETIMECHANGE = lParam
-      If *NMDATETIMECHANGE\nmhdr\code = #DTN_DROPDOWN
-        Gadget = GetDlgCtrlID_(*NMDATETIMECHANGE\nmhdr\hwndfrom)
-        If GadgetType(Gadget) = #PB_GadgetType_Date
-          PushMapPosition(Object())
-          If FindMapElement(Object(), Str(Gadget))
-            If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-              BackColor = Object()\BackColor
-              Found     = #True
+        
+        ; Case #WM_CTLCOLORBTN         ; Button
+        ; Case #WM_CTLCOLORDLG
+        ; Case #WM_CTLCOLOREDIT        ; Combo, Spin, String
+        ; Case #WM_CTLCOLORLISTBOX     ; ListView
+        ; Case #WM_CTLCOLORSCROLLBAR   ; Scrlbar
+        
+      Case #WM_CTLCOLOREDIT
+        ParentGadget = GetParent_(lParam)
+        Buffer = Space(64)
+        If GetClassName_(ParentGadget, @Buffer, 64)
+          If Buffer = "ComboBox"
+            Gadget = GetDlgCtrlID_(ParentGadget)
+            If IsGadget(Gadget)
+              PushMapPosition(ObjectC())
+              If FindMapElement(ObjectC(), Str(Gadget))
+                If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+                  BackColor = \BackColor
+                  TextColor = \TextColor
+                  Found     = #True
+                EndIf
+              EndIf
+              PopMapPosition(ObjectC())
+              If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+              
+              CompilerIf #EditAccentColor
+                If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 10) : Else : BackColor = AccentColorOC(BackColor, -10) : EndIf
+              CompilerEndIf
+              If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
+                                  " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
+              If IsWindowEnabled_(GadgetID(Gadget)) = #False
+                If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
+              EndIf
+              If Gadget <> GetActiveGadget()
+                SendMessage_(lParam, #EM_SETSEL, 0, 0)   ; Deselect the ComboBox editable string if not the active Gadget
+              EndIf
+              SetTextColor_(wParam, TextColor)
+              SetBkMode_(wParam, #TRANSPARENT)
+              ;SetBkColor_(wParam, BackColor)
+              If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
+                ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+              EndIf
+              ProcedureReturn ObjectCBrush(Str(BackColor))
             EndIf
           EndIf
-          PopMapPosition(Object())
-          If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
-          
-          If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
-          SetWindowTheme_(FindWindowEx_(FindWindow_("DropDown", 0), #Null, "SysMonthCal32", #Null), "", "")
         EndIf
-      EndIf
-      
-      ; ListIcon and ExplorerList
-      *lvCD.NMLVCUSTOMDRAW = lParam
-      If *lvCD\nmcd\hdr\code = #NM_CUSTOMDRAW
-        If IsWindowEnabled_(*lvCD\nmcd\hdr\hWndFrom) = #False
-          Gadget = GetDlgCtrlID_(*lvCD\nmcd\hdr\hWndFrom)
-          If GadgetType(Gadget) = #PB_GadgetType_ListIcon Or GadgetType(Gadget) = #PB_GadgetType_ExplorerList
-            PushMapPosition(Object())
-            If FindMapElement(Object(), Str(Gadget))
-              If Not(Object()\BackMode = #PB_Default And Object()\TextMode = #PB_Default)
-                BackColor = Object()\BackColor
-                TextColor = Object()\TextColor
+        
+      Case #WM_DRAWITEM   ; For ComboBoxGadget and PanelGadget
+        *DrawItem.DRAWITEMSTRUCT = lParam
+        If *DrawItem\CtlType = #ODT_COMBOBOX
+          Gadget = wParam
+          If IsGadget(Gadget)
+            PushMapPosition(ObjectC())
+            If FindMapElement(ObjectC(), Str(Gadget))
+              If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+                BackColor = \BackColor
+                TextColor = \TextColor
                 Found     = #True
               EndIf
             EndIf
-            PopMapPosition(Object())
+            PopMapPosition(ObjectC())
+            If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+            
+            If *DrawItem\itemID <> -1
+              If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
+                                  " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
+              If *DrawItem\itemstate & #ODS_SELECTED
+                Color_HightLight = GetSysColor_(#COLOR_HIGHLIGHT)
+                If Not(FindMapElement(ObjectCBrush(), Str(Color_HightLight)))
+                  ObjectCBrush(Str(Color_HightLight)) = CreateSolidBrush_(Color_HightLight)
+                EndIf
+                FillRect_(*DrawItem\hDC, *DrawItem\rcitem, ObjectCBrush(Str(Color_HightLight)))
+              Else
+                If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
+                  ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+                EndIf
+                FillRect_(*DrawItem\hDC, *DrawItem\rcitem, ObjectCBrush(Str(BackColor)))
+              EndIf
+              
+              SetBkMode_(*DrawItem\hDC, #TRANSPARENT)
+              ;If *DrawItem\itemID = 0 : ; Example for Icon : DrawIconEx_(*DrawItem\hDC, *DrawItem\rcItem\left + 2, *DrawItem\rcItem\top + 6, icon1, iconsize, iconsize, 0, 0, #DI_NORMAL) : EndIf
+              If IsWindowEnabled_(GadgetID(Gadget)) = #False
+                If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
+              EndIf
+              SetTextColor_(*DrawItem\hDC, TextColor)
+              Text = GetGadgetItemText(*DrawItem\CtlID, *DrawItem\itemID)
+              *DrawItem\rcItem\left + DesktopScaledX(4)
+              DrawText_(*DrawItem\hDC, Text, Len(Text), *DrawItem\rcItem, #DT_LEFT | #DT_SINGLELINE | #DT_VCENTER)
+            EndIf
+          EndIf
+        EndIf
+        
+        If *DrawItem\CtlType = #ODT_TAB
+          Gadget = GetDlgCtrlID_(*DrawItem\hwndItem)
+          If IsGadget(Gadget)
+            PushMapPosition(ObjectC())
+            If FindMapElement(ObjectC(), Str(Gadget))
+              If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+                BackColor = \BackColor
+                TextColor = \TextColor
+                Found     = #True
+              EndIf
+            EndIf
+            PopMapPosition(ObjectC())
             If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
             
             If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
                                 " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
-            Select *lvCD\nmcd\dwDrawStage
-              Case #CDDS_PREPAINT
-                If Not(FindMapElement(hBrush(), Str(BackColor)))
-                  hBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
-                EndIf
-                FillRect_(*lvCD\nmcd\hDC, *lvCD\nmcd\rc, hBrush(Str(BackColor)))
-                ProcedureReturn #CDRF_NOTIFYITEMDRAW
-              Case #CDDS_ITEMPREPAINT
-                ;DrawIconEx_(*lvCD\nmcd\hDC, subItemRect\left + 5, (subItemRect\top + subItemRect\bottom - GetSystemMetrics_(#SM_CYSMICON)) / 2, hIcon, 16, 16, 0, 0, #DI_NORMAL)
-                If IsWindowEnabled_(GadgetID(Gadget)) = #False
-                  If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
-                EndIf
-                *lvCD\clrText   = TextColor
-                *lvCD\clrTextBk = BackColor
-                ProcedureReturn #CDRF_DODEFAULT
-            EndSelect
+            If *DrawItem\itemState
+              If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
+                ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+              EndIf
+              *DrawItem\rcItem\left + 2
+              FillRect_(*DrawItem\hDC, *DrawItem\rcItem, ObjectCBrush(Str(BackColor)))
+            Else
+              If IsDarkColorOC(BackColor)
+                FadeGrayColor = FadeColorOC(BackColor, 40, AccentColorOC(BackColor, 80))
+              Else
+                FadeGrayColor = FadeColorOC(BackColor, 40, AccentColorOC(BackColor, -80))
+              EndIf
+              If Not(FindMapElement(ObjectCBrush(), Str(FadeGrayColor)))
+                ObjectCBrush(Str(FadeGrayColor)) = CreateSolidBrush_(FadeGrayColor)
+              EndIf
+              *DrawItem\rcItem\top + 2 : *DrawItem\rcItem\bottom + 3   ; Default: \rcItem\bottom + 2 . +3 to decrease the size of the bottom line
+              FillRect_(*DrawItem\hDC, *DrawItem\rcItem, ObjectCBrush(Str(FadeGrayColor)))
+            EndIf
+            
+            SetBkMode_(*DrawItem\hDC, #TRANSPARENT)
+            If IsWindowEnabled_(GadgetID(Gadget)) = #False
+              If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
+            EndIf
+            SetTextColor_(*DrawItem\hDC, TextColor)
+            Text = GetGadgetItemText(Gadget, *DrawItem\itemID)
+            *DrawItem\rcItem\left + DesktopScaledX(4)
+            ;TextOut_(*DrawItem\hDC, *DrawItem\rcItem\left, *DrawItem\rcItem\top, Text, Len(Text))
+            DrawText_(*DrawItem\hDC, @Text, Len(Text), @*DrawItem\rcItem, #DT_LEFT | #DT_VCENTER | #DT_SINGLELINE)
+            ProcedureReturn #True
           EndIf
         EndIf
-      EndIf
-      
-  EndSelect
+        
+      Case #WM_NOTIFY   ; For DateGadget
+        *NMDATETIMECHANGE.NMDATETIMECHANGE = lParam
+        If *NMDATETIMECHANGE\nmhdr\code = #DTN_DROPDOWN
+          Gadget = GetDlgCtrlID_(*NMDATETIMECHANGE\nmhdr\hwndfrom)
+          If GadgetType(Gadget) = #PB_GadgetType_Date
+            PushMapPosition(ObjectC())
+            If FindMapElement(ObjectC(), Str(Gadget))
+              If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+                BackColor = \BackColor
+                Found     = #True
+              EndIf
+            EndIf
+            PopMapPosition(ObjectC())
+            If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+            
+            If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
+            SetWindowTheme_(FindWindowEx_(FindWindow_("DropDown", 0), #Null, "SysMonthCal32", #Null), "", "")
+          EndIf
+        EndIf
+        
+        ; ListIcon and ExplorerList
+        *lvCD.NMLVCUSTOMDRAW = lParam
+        If *lvCD\nmcd\hdr\code = #NM_CUSTOMDRAW
+          Gadget = GetDlgCtrlID_(*lvCD\nmcd\hdr\hWndFrom)
+          If IsGadget(Gadget)
+            If IsWindowEnabled_(GadgetID(Gadget)) = #False
+              If GadgetType(Gadget) = #PB_GadgetType_ListIcon Or GadgetType(Gadget) = #PB_GadgetType_ExplorerList
+                PushMapPosition(ObjectC())
+                If FindMapElement(ObjectC(), Str(Gadget))
+                  If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+                    BackColor = \BackColor
+                    TextColor = \TextColor
+                    Found     = #True
+                  EndIf
+                EndIf
+                PopMapPosition(ObjectC())
+                If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+                
+                If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
+                                    " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
+                Select *lvCD\nmcd\dwDrawStage
+                  Case #CDDS_PREPAINT
+                    If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
+                      ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+                    EndIf
+                    FillRect_(*lvCD\nmcd\hDC, *lvCD\nmcd\rc, ObjectCBrush(Str(BackColor)))
+                    ProcedureReturn #CDRF_NOTIFYITEMDRAW
+                  Case #CDDS_ITEMPREPAINT
+                    ;DrawIconEx_(*lvCD\nmcd\hDC, subItemRect\left + 5, (subItemRect\top + subItemRect\bottom - GetSystemMetrics_(#SM_CYSMICON)) / 2, hIcon, 16, 16, 0, 0, #DI_NORMAL)
+                    If IsWindowEnabled_(GadgetID(Gadget)) = #False
+                      If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
+                    EndIf
+                    *lvCD\clrText   = TextColor
+                    *lvCD\clrTextBk = BackColor
+                    ProcedureReturn #CDRF_DODEFAULT
+                EndSelect
+              EndIf
+            EndIf
+          EndIf
+        EndIf
+        
+    EndSelect
+  EndWith
+  
   ProcedureReturn Result
 EndProcedure
 ;- ----- End CallBack -----
 ;-
 ;- ----- Object Color -----
-Procedure SetObjectTheme(Theme.s)
-  Protected Gadget, ChildGadget, Buffer.s
-  PB_Object_EnumerateStart(PB_Gadget_Objects)
-  While PB_Object_EnumerateNext(PB_Gadget_Objects, @Gadget)
-    Select GadgetType(Gadget)
-      Case #PB_GadgetType_Editor, #PB_GadgetType_ExplorerList, #PB_GadgetType_ExplorerTree, #PB_GadgetType_ListIcon, #PB_GadgetType_ListView,
-           #PB_GadgetType_ScrollArea, #PB_GadgetType_ScrollBar, #PB_GadgetType_Tree
-        SetWindowTheme_(GadgetID(Gadget), @Theme, 0)
-      Case #PB_GadgetType_ComboBox
-        Buffer = Space(64)
-        If GetClassName_(GadgetID(Gadget), @Buffer, 64)
-          If Buffer = "ComboBox"
-            If OSVersion() >= #PB_OS_Windows_10 And Theme = "DarkMode_Explorer"
-              SetWindowTheme_(GadgetID(Gadget), "DarkMode_CFD", "Combobox")
-            Else
-              SetWindowTheme_(GadgetID(Gadget), @Theme, 0)
-            EndIf
-          EndIf
-        EndIf
-        ChildGadget = GetWindow_(GadgetID(Gadget), #GW_CHILD)
-        If ChildGadget
+Procedure SetObjectTheme(Gadget, Theme.s)
+  Protected ChildGadget, Buffer.s
+  If FindMapElement(ObjectC(), Str(Gadget))
+    With ObjectC()
+      Select \Type
+        Case #PB_GadgetType_Editor, #PB_GadgetType_ExplorerList, #PB_GadgetType_ExplorerTree, #PB_GadgetType_ListIcon, #PB_GadgetType_ListView,
+             #PB_GadgetType_ScrollArea, #PB_GadgetType_ScrollBar, #PB_GadgetType_Tree
+          SetWindowTheme_(\ObjectID, @Theme, 0)
+          
+        Case #PB_GadgetType_ComboBox
           Buffer = Space(64)
-          If GetClassName_(ChildGadget, @Buffer, 64)
+          If GetClassName_(\ObjectID, @Buffer, 64)
             If Buffer = "ComboBox"
               If OSVersion() >= #PB_OS_Windows_10 And Theme = "DarkMode_Explorer"
-                SetWindowTheme_(ChildGadget, "DarkMode_CFD", "Combobox")
+                SetWindowTheme_(\ObjectID, "DarkMode_CFD", "Combobox")
               Else
-                SetWindowTheme_(ChildGadget, @Theme, 0)
+                SetWindowTheme_(\ObjectID, @Theme, 0)
               EndIf
             EndIf
           EndIf
-        EndIf
-    EndSelect
-  Wend
-  PB_Object_EnumerateAbort(PB_Gadget_Objects)
+          ChildGadget = GetWindow_(\ObjectID, #GW_CHILD)
+          If ChildGadget
+            Buffer = Space(64)
+            If GetClassName_(ChildGadget, @Buffer, 64)
+              If Buffer = "ComboBox"
+                If OSVersion() >= #PB_OS_Windows_10 And Theme = "DarkMode_Explorer"
+                  SetWindowTheme_(ChildGadget, "DarkMode_CFD", "Combobox")
+                Else
+                  SetWindowTheme_(ChildGadget, @Theme, 0)
+                EndIf
+              EndIf
+            EndIf
+          EndIf
+          
+      EndSelect
+    EndWith
+  EndIf
 EndProcedure
 
 Procedure.s GadgetTypeToString(Gadget)
@@ -1328,7 +1394,7 @@ Procedure SetObjectColorType(Type.s = "", Value = 1)
       For I = 0 To 99     ; Loop break if 99
         Read.l iType
         If iType = 99 : Break : EndIf
-        ObjectType(Str(iType)) = Value
+        ObjectCType(Str(iType)) = Value
       Next
     Case "COLORSTATIC"
       SetObjectColorType("", 0)
@@ -1336,7 +1402,7 @@ Procedure SetObjectColorType(Type.s = "", Value = 1)
       For I = 0 To 99     ; Loop break if 99
         Read.l iType
         If iType = 99 : Break : EndIf
-        ObjectType(Str(iType)) = Value
+        ObjectCType(Str(iType)) = Value
       Next
     Case "NOEDIT"
       SetObjectColorType("", 0)
@@ -1344,31 +1410,31 @@ Procedure SetObjectColorType(Type.s = "", Value = 1)
       For I = 0 To 99     ; Loop break if 99
         Read.l iType
         If iType = 99 : Break : EndIf
-        ObjectType(Str(iType)) = Value
+        ObjectCType(Str(iType)) = Value
       Next
     Default   ; 1 or multiple #PB_GadgetType_xxxxx separated by comma. Ex: SetObjectColorType("#PB_GadgetType_CheckBox, #PB_GadgetType_Option").
       SetObjectColorType("", 0)
       Count = CountString(Type, ",") + 1
       For I = 1 To Count
         iType = TypetoValue(Trim(StringField(Type, I, ",")))
-        If FindMapElement(ObjectType(), Str(iType))
-          ObjectType(Str(iType)) = Value
+        If FindMapElement(ObjectCType(), Str(iType))
+          ObjectCType(Str(iType)) = Value
         EndIf
       Next
       ; Let the User Add or Not the Containers to Color the Children.
-      ; ObjectType(Str(#PB_GadgetType_Canvas)) = Value
-      ; ObjectType(Str(#PB_GadgetType_Container)) = Value
-      ; ObjectType(Str(#PB_GadgetType_Panel)) = Value
-      ; ObjectType(Str(#PB_GadgetType_ScrollArea)) = Value
-      ; ObjectType(Str(#PB_GadgetType_Splitter)) = Value
+      ; ObjectCType(Str(#PB_GadgetType_Canvas)) = Value
+      ; ObjectCType(Str(#PB_GadgetType_Container)) = Value
+      ; ObjectCType(Str(#PB_GadgetType_Panel)) = Value
+      ; ObjectCType(Str(#PB_GadgetType_ScrollArea)) = Value
+      ; ObjectCType(Str(#PB_GadgetType_Splitter)) = Value
   EndSelect
   
   DataSection
     AllType:
     Data.l  #PB_GadgetType_Calendar, #PB_GadgetType_Canvas, #PB_GadgetType_CheckBox, #PB_GadgetType_ComboBox, #PB_GadgetType_Container, #PB_GadgetType_Date,
             #PB_GadgetType_Editor, #PB_GadgetType_ExplorerList, #PB_GadgetType_ExplorerTree, #PB_GadgetType_Frame, #PB_GadgetType_HyperLink, #PB_GadgetType_ListIcon,
-            #PB_GadgetType_ListView, #PB_GadgetType_Option, #PB_GadgetType_Panel, #PB_GadgetType_ProgressBar, #PB_GadgetType_ScrollArea, #PB_GadgetType_Spin,
-            #PB_GadgetType_Splitter, #PB_GadgetType_String, #PB_GadgetType_Text, #PB_GadgetType_TrackBar, #PB_GadgetType_Tree, 99
+            #PB_GadgetType_ListView, #PB_GadgetType_Option, #PB_GadgetType_Panel, #PB_GadgetType_ProgressBar, #PB_GadgetType_ScrollArea, #PB_GadgetType_ScrollBar,
+            #PB_GadgetType_Spin, #PB_GadgetType_Splitter, #PB_GadgetType_String, #PB_GadgetType_Text, #PB_GadgetType_TrackBar, #PB_GadgetType_Tree, 99
     NoEditType:
     Data.l  #PB_GadgetType_Calendar, #PB_GadgetType_Canvas, #PB_GadgetType_CheckBox, #PB_GadgetType_ComboBox, #PB_GadgetType_Container, #PB_GadgetType_Date,
             #PB_GadgetType_ExplorerList, #PB_GadgetType_ExplorerTree, #PB_GadgetType_Frame, #PB_GadgetType_HyperLink, #PB_GadgetType_ListIcon, #PB_GadgetType_ListView,
@@ -1383,8 +1449,8 @@ EndProcedure
 Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
   Protected BackColor, OldBackColor, OldTextColor, SplitterImg
   
-  If FindMapElement(Object(), Str(Gadget))
-    With Object()
+  If FindMapElement(ObjectC(), Str(Gadget))
+    With ObjectC()
       OldBackColor = \BackColor : OldTextColor = \TextColor
       \BackMode = BackGroundColor : \TextMode = FrontColor
       
@@ -1404,6 +1470,14 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
         Default
           \BackColor = BackGroundColor
       EndSelect
+      
+      If \BackColor
+        If IsDarkColorOC(\BackColor)
+          SetDarkTheme(Gadget)
+        Else
+          SetExplorerTheme(Gadget)
+        EndIf
+      EndIf
       
       ; ----- TextColor -----
       Select \TextMode
@@ -1443,14 +1517,12 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
             EndSelect
             
           Case #PB_Default
-            ;\BackColor = \BackColor
             Select \TextMode
               Case #PB_Auto, #PB_Default
                 \TextColor = #PB_Default
             EndSelect
             
           Default
-            ;\BackColor = \BackColor
             Select \TextMode
               Case #PB_Auto, #PB_Default
                 If IsDarkColorOC(\BackColor) : \TextColor = AccentColorOC(\BackColor, 100) : Else : \TextColor = AccentColorOC(\BackColor, -100) : EndIf
@@ -1465,14 +1537,18 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
         Select \Type
           Case #PB_GadgetType_CheckBox, #PB_GadgetType_Frame, #PB_GadgetType_Option, #PB_GadgetType_TrackBar, #PB_GadgetType_Text
             If  \BackMode = #PB_Default And \TextMode = #PB_Default
-              If FindMapElement(OldProc(), Str(Gadget))
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, OldProc())
-                DeleteMapElement(OldProc())
+              If FindMapElement(ObjectC(), Str(Gadget))
+                If \OldProc
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
+                  \OldProc = 0
+                EndIf
               EndIf
             Else
-              If Not(FindMapElement(OldProc(), Str(Gadget)))
-                OldProc(Str(Gadget)) = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @StaticProc())
+              If FindMapElement(ObjectC(), Str(Gadget))
+                If Not \OldProc
+                  \OldProc = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @StaticProc())
+                EndIf
               EndIf
             EndIf
             SendMessage_(\ObjectID, #WM_ENABLE, IsWindowEnabled_(\ObjectID), 0)
@@ -1495,20 +1571,26 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
           Case #PB_GadgetType_Container, #PB_GadgetType_ScrollArea
             SetGadgetColor(Gadget, #PB_Gadget_BackColor, \BackColor)
             
+          Case #PB_GadgetType_ScrollBar
+            
           Case #PB_GadgetType_ExplorerTree, #PB_GadgetType_HyperLink
             SetGadgetColor(Gadget, #PB_Gadget_BackColor, \BackColor)
             SetGadgetColor(Gadget, #PB_Gadget_FrontColor, \TextColor)
             
           Case #PB_GadgetType_Editor
             If  \BackMode = #PB_Default And \TextMode = #PB_Default
-              If FindMapElement(OldProc(), Str(Gadget))
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, OldProc())
-                DeleteMapElement(OldProc())
+              If FindMapElement(ObjectC(), Str(Gadget))
+                If \OldProc
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
+                  \OldProc = 0
+                EndIf
               EndIf
             Else
-              If Not(FindMapElement(OldProc(), Str(Gadget)))
-                OldProc(Str(Gadget)) = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @EditorProc())
+              If FindMapElement(ObjectC(), Str(Gadget))
+                If Not \OldProc
+                  \OldProc = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @EditorProc())
+                EndIf
               EndIf
             EndIf
             If IsDarkColorOC(\BackColor) : BackColor = AccentColorOC(\BackColor, 20) : Else : BackColor = AccentColorOC(\BackColor, -20) : EndIf
@@ -1527,7 +1609,7 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
             CompilerEndIf
             SetGadgetColor(Gadget, #PB_Gadget_FrontColor, \TextColor)
             
-         Case #PB_GadgetType_ListView
+          Case #PB_GadgetType_ListView
             SetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE, GetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE) &~ #WS_EX_CLIENTEDGE)
             SetWindowLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) | #WS_BORDER)
             SetGadgetColor(Gadget, #PB_Gadget_BackColor, \BackColor)
@@ -1554,14 +1636,18 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
             
           Case #PB_GadgetType_Calendar
             If  \BackMode = #PB_Default And \TextMode = #PB_Default
-              If FindMapElement(OldProc(), Str(Gadget))
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, OldProc())
-                DeleteMapElement(OldProc())
+              If FindMapElement(ObjectC(), Str(Gadget))
+                If \OldProc
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
+                  \OldProc = 0
+                EndIf
               EndIf
             Else
-              If Not(FindMapElement(OldProc(), Str(Gadget)))
-                OldProc(Str(Gadget)) = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @CalendarProc())
+              If FindMapElement(ObjectC(), Str(Gadget))
+                If Not \OldProc
+                  \OldProc = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @CalendarProc())
+                EndIf
               EndIf
             EndIf
             SetWindowTheme_(\ObjectID, "", "")
@@ -1574,29 +1660,37 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
             
           Case #PB_GadgetType_Panel
             If  \BackMode = #PB_Default And \TextMode = #PB_Default
-              If FindMapElement(OldProc(), Str(Gadget))
+              If FindMapElement(ObjectC(), Str(Gadget))
                 SetWindowLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) &~ #TCS_OWNERDRAWFIXED)
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, OldProc())
-                DeleteMapElement(OldProc())
+                If \OldProc
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
+                  \OldProc = 0
+                EndIf
               EndIf
             Else
-              If Not(FindMapElement(OldProc(), Str(Gadget)))
+              If FindMapElement(ObjectC(), Str(Gadget))
                 SetWindowLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) | #TCS_OWNERDRAWFIXED)
-                OldProc(Str(Gadget)) = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @PanelProc())
+                If Not \OldProc
+                  \OldProc = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @PanelProc())
+                EndIf
               EndIf
             EndIf
             
           Case #PB_GadgetType_ListIcon, #PB_GadgetType_ExplorerList
             If  \BackMode = #PB_Default And \TextMode = #PB_Default
-              If FindMapElement(OldProc(), Str(Gadget))
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, OldProc())
-                DeleteMapElement(OldProc())
+              If FindMapElement(ObjectC(), Str(Gadget))
+                If \OldProc
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
+                  \OldProc = 0
+                EndIf
               EndIf
             Else
-              If Not(FindMapElement(OldProc(), Str(Gadget)))
-                OldProc(Str(Gadget)) = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @ListIconProc())
+              If FindMapElement(ObjectC(), Str(Gadget))
+                If Not \OldProc
+                  \OldProc = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @ListIconProc())
+                EndIf
               EndIf
             EndIf
             SetGadgetColor(Gadget, #PB_Gadget_BackColor, \BackColor)
@@ -1607,22 +1701,26 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
             
           Case  #PB_GadgetType_Splitter
             If  \BackMode = #PB_Default And \TextMode = #PB_Default
-              If FindMapElement(OldProc(), Str(Gadget))
+              If FindMapElement(ObjectC(), Str(Gadget))
                 SetClassLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) &~ #CS_DBLCLKS)
                 SetWindowLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) &~ #WS_CLIPCHILDREN)
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, OldProc())
-                DeleteMapElement(OldProc())
+                If \OldProc
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
+                  \OldProc = 0
+                EndIf
               EndIf
             Else
-              If Not(FindMapElement(OldProc(), Str(Gadget)))
+              If FindMapElement(ObjectC(), Str(Gadget))
                 SetClassLongPtr_(\ObjectID, #GCL_STYLE, GetClassLongPtr_(\ObjectID, #GCL_STYLE) | #CS_DBLCLKS)
                 SetWindowLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) | #WS_CLIPCHILDREN)
-                OldProc(Str(Gadget)) = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
-                SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @SplitterExtCB())
+                If Not \OldProc
+                  \OldProc = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
+                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @SplitterProc())
+                EndIf
               EndIf
             EndIf
             CompilerIf #UseUxGripper = 0
-              If \GParentObjectID : DeleteObject_(Object()\GParentObjectID) : EndIf   ; Delete the  Pattern Brush stored in GParentObjectID field
+              If \GParentObjectID : DeleteObject_(\GParentObjectID) : EndIf   ; Delete the  Pattern Brush stored in GParentObjectID field
               CompilerIf #SplitterBorder
                 If IsDarkColorOC(\BackColor)
                   SplitterImg = CreateImage(#PB_Any, 5, 5, 24, AccentColorOC(\BackColor, 40))
@@ -1659,52 +1757,54 @@ EndProcedure
 Procedure LoopObjectColor(Window, ParentObject, BackGroundColor, FrontColor, FirstPassDone = #False)
   Static Level
   Protected Gadget, ParentBackColor, ProgressBackColor
-  If FirstPassDone = 0
-    If ParentObject = #PB_All
-      Level        = 0
-      ParentObject = Window
-      Select BackGroundColor
-        Case #PB_Auto
-          ParentBackColor = GetWindowColor(Window)
-        Case #PB_Default
-          ParentBackColor = GetSysColor_(#COLOR_WINDOW)
-        Default
-          ParentBackColor = BackGroundColor
-          ;If GetWindowColor(Window) = #PB_Default : SetWindowColor(Window, ParentBackColor) : EndIf
-          SetWindowColor(Window, ParentBackColor)
-      EndSelect
-      If ParentBackColor = #PB_Default : ParentBackColor = BackDefaultColor() : EndIf
-    ElseIf FindMapElement(Object(), Str(ParentObject))
-      Level = Object()\Level
-      Select BackGroundColor
-        Case #PB_Auto
-          ParentBackColor = GetParentBackColor(ParentObject)
-        Case #PB_Default
-          ParentBackColor = GetSysColor_(#COLOR_WINDOW)
-        Default
-          ParentBackColor = BackGroundColor
-      EndSelect
-      If ParentBackColor = #PB_Default : ParentBackColor = BackDefaultColor() : EndIf
-      ObjectColor(ParentObject, BackGroundColor, ParentBackColor, FrontColor)
-    Else
-      ProcedureReturn #PB_Default
-    EndIf
-    FirstPassDone = #True
-  Else
-    If FindMapElement(Object(), Str(ParentObject))
-      ParentBackColor = Object()\BackColor
-      If ParentBackColor = #PB_Default : ParentBackColor = BackDefaultColor() : EndIf
-    EndIf
-  EndIf
   
-  Level + 1
-  PushMapPosition(Object())
-  ResetMap(Object())
-  With Object()
-    While NextMapElement(Object())
+  With ObjectC()
+    If FirstPassDone = 0
+      If ParentObject = #PB_All
+        Level        = 0
+        ParentObject = Window
+        Select BackGroundColor
+          Case #PB_Auto
+            ParentBackColor = GetWindowColor(Window)
+          Case #PB_Default
+            ParentBackColor = GetSysColor_(#COLOR_WINDOW)
+          Default
+            ParentBackColor = BackGroundColor
+            ;If GetWindowColor(Window) = #PB_Default : SetWindowColor(Window, ParentBackColor) : EndIf
+            SetWindowColor(Window, ParentBackColor)
+        EndSelect
+        If ParentBackColor = #PB_Default : ParentBackColor = BackDefaultColor() : EndIf
+      ElseIf FindMapElement(ObjectC(), Str(ParentObject))
+        Level = \Level
+        Select BackGroundColor
+          Case #PB_Auto
+            ParentBackColor = GetParentBackColor(ParentObject)
+          Case #PB_Default
+            ParentBackColor = GetSysColor_(#COLOR_WINDOW)
+          Default
+            ParentBackColor = BackGroundColor
+        EndSelect
+        If ParentBackColor = #PB_Default : ParentBackColor = BackDefaultColor() : EndIf
+        ObjectColor(ParentObject, BackGroundColor, ParentBackColor, FrontColor)
+      Else
+        ProcedureReturn #PB_Default
+      EndIf
+      FirstPassDone = #True
+    Else
+      If FindMapElement(ObjectC(), Str(ParentObject))
+        ParentBackColor = \BackColor
+        If ParentBackColor = #PB_Default : ParentBackColor = BackDefaultColor() : EndIf
+      EndIf
+    EndIf
+    
+    Level + 1
+    PushMapPosition(ObjectC())
+    ResetMap(ObjectC())
+    While NextMapElement(ObjectC())
       If \Level = Level And \ParentObject = ParentObject
-        Gadget = Val(MapKey(Object()))
-        If Not(ObjectType(Str(GadgetType(Gadget)))) : Continue : EndIf
+        Gadget = Val(MapKey(ObjectC()))
+        If Not(IsGadget(Gadget)) : DeleteMapElement(ObjectC()) : Continue : EndIf
+        If Not(ObjectCType(Str(GadgetType(Gadget)))) : Continue : EndIf
         
         If \Type = #PB_GadgetType_ProgressBar
           If IsDarkColorOC(ParentBackColor)   ; ----- Specific ProgressBar Color
@@ -1723,21 +1823,24 @@ Procedure LoopObjectColor(Window, ParentObject, BackGroundColor, FrontColor, Fir
         EndIf
       EndIf
     Wend
+    PopMapPosition(ObjectC())
+    
   EndWith
-  PopMapPosition(Object())
 EndProcedure
 
 Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #PB_Auto, FrontColor = #PB_Auto)
   Protected ParentWindow, ParentBackColor, I
-  If MapSize(ObjectType()) = 0 : SetObjectColorType()                               : EndIf
-  If MapSize(Object()) = 0     : LoadObject()  : ProcedureReturnIf(CountWindow = 0) : EndIf
+  If MapSize(ObjectCType()) = 0 : SetObjectColorType()                               : EndIf
+  LoadObjectC()
+  ProcedureReturnIf(CountWinObjectC() = 0)
   
   If Gadget = #PB_All
     If Window = #PB_All
       SetWindowCallback(@WinCallback())
-      For I = 0 To CountWindow - 1
-        LoopObjectColor(Window(0, I), #PB_All, BackGroundColor, FrontColor)
-        If #DebugON : Debug "" : Debug "----------" : EnumWinChildColor(Window(0, I)) : Debug  "----------" : Debug "" : EndIf
+      Protected CountWinObjectC = CountWinObjectC() - 1
+      For I = 0 To CountWinObjectC
+        LoopObjectColor(WinObjectC(0, I), #PB_All, BackGroundColor, FrontColor)
+        If #DebugON : Debug "" : Debug "----------" : EnumWinChildColor(WinObjectC(0, I)) : Debug  "----------" : Debug "" : EndIf
       Next
     Else
       If IsWindow(Window)
@@ -1750,9 +1853,9 @@ Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #
     If IsGadget(Gadget)
       ParentWindow = GetWindowRoot(Gadget)
       If (Window = #PB_All Or ParentWindow = Window)
-        If FindMapElement(Object(), Str(Gadget))
+        If FindMapElement(ObjectC(), Str(Gadget))
           SetWindowCallback(@WinCallback(), ParentWindow)
-          If Object(Str(Gadget))\IsContainer
+          If ObjectC(Str(Gadget))\IsContainer
             LoopObjectColor(ParentWindow, Gadget, BackGroundColor, FrontColor)
             If #DebugON : Debug "" : Debug "----------" : EnumWinChildColor(ParentWindow) : Debug "----------" : Debug "" : EndIf
           Else
@@ -1774,6 +1877,5 @@ Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #
   
 EndProcedure
 
-; IDE Options = PureBasic 5.73 LTS (Windows - x64)
-; Folding = ----------
+; IDE Options = PureBasic 6.00 LTS (Windows - x64)
 ; EnableXP
