@@ -58,21 +58,21 @@
 ;
 ; ---------------------------------------------
 ;
-;   The theme "Explorer" or "DarkMode_Explorer" (Windows 10 and up) is automatically applied according to the background color of each Gadget.
+;   The theme "Explorer" or "DarkMode_Explorer" (Windows 10 and up) is automatically applied according to the Background Color of each Gadget.
 ;       Gadget supported: ComboBox, Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree
 ;   However, after calling SetObjectColor(), you can change the applied theme by using one of the 2 macros below:
-;       For example, If you have a window With a Dark Background Color And a ScrollArea With a Light Color,
-;       By Default, the Light Theme will be applied for the ScollArea and its ScrollBars related To the ScrollArea color.
-;       But you may want to change it to a dark theme to match the window which is in dark color. It would be like this
+;       For example, if you have a window With a Dark Background Color And a ScrollArea With a Light Color,
+;       By default, the Light Theme will be applied for the ScollArea and its ScrollBars related to the ScrollArea Color.
+;       But you may want to change it to a Dark Theme to match the Window which is in Dark Color. It would be like this
 ;           SetObjectColor(#PB_All, #PB_All, #Black)
 ;           SetObjectColor(#Windows, #ScrollArea, #Gray)
 ;           SetDarkTheme(#ScrollArea)
 ;   
 ;   SetDarkTheme(Gadget)           Optional
-;      Apply the "DarkMode_Explorer" Theme if the OSVersion >= Windows_10, otherwise the "Explorer" theme is applied
+;      Apply the "DarkMode_Explorer" Theme if OSVersion >= Windows_10, otherwise the "Explorer" theme is applied
 ;
-;   SetObjectTheme(Gadget) , "Explorer"
-;      Apply the "Explorer" Theme of the OSVersion >= Vista
+;   SetExplorerTheme(Gadget)       Optional
+;      Apply the "Explorer" Theme if OSVersion >= Vista
 ;
 ; ---------------------------------------------
 ;
