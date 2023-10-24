@@ -7,7 +7,7 @@
 ;              The theme "Explorer" or "DarkMode_Explorer" (Windows 10 and up) is automatically applied according to the background color of each Gadget for
 ;                  ComboBox, Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree
 ;      Author: ChrisR
-;     Version: 1.3.0
+;     Version: 1.4.0
 ;        Date: 2023-01-24   (Creation Date: 2022-04-14)
 ;  PB-Version: 5.73 6.0 x64/x86
 ;          OS: Windows only
@@ -17,7 +17,7 @@
 ; Supported gadget: Canvas Container, Calendar, CheckBox, ComboBox, Container, Date, Editor, ExplorerList, ExplorerTree, Frame, HyperLink, ListIcon, ListView,
 ;            Option, Panel, ProgressBar, ScrollArea, Spin, Splitter, String, Text, TrackBar, Tree
 ;
-; Notes: For the ComboBoxGadget, #CBS_HASSTRINGS and #CBS_OWNERDRAWFIXED must be added at Combobox creation time, ex: ComboBoxGadget(#Gasdget,X,Y,W,H,#CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED)
+; Notes: For the ComboBoxGadget, #CBS_HASSTRINGS and #CBS_OWNERDRAWFIXED must be added at Combobox creation time, ex: ComboBoxGadget(#Combo,X,Y,W,H,#CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED)
 ;        To receive its events in the Window Callback and be drawn with the chosen colors.
 ;        It does not work for ComboBox with #PB_ComboBox_Image constant, in this case do Not add the constants #CBS_HASSTRINGS|#CBS_OWNERDRAWFIXED
 ;
@@ -101,7 +101,7 @@ Structure SObjectC
   IsContainer.b
   ParentObject.i
   ParentObjectID.i
-  GParentObjectID.i   ; Temporary Loaded for ScrollArea and Panel, it is then reset to 0
+  GParentObjectID.i   ; Temporary Loaded for ScrollArea and Panel, it is then reset to 0 or used to store the Splitter gripper image 
   BackMode.i
   BackColor.i
   TextMode.i
@@ -114,14 +114,28 @@ Global NewMap ObjectCType()
 Global NewMap ObjectCBrush()
 Global Dim    WinObjectC(1, 0)
 
+CompilerIf Not (Defined(PB_Globals, #PB_Structure))
+  Structure PB_Globals
+    CurrentWindow.i
+    FirstOptionGadget.i
+    DefaultFont.i
+    *PanelStack
+    PanelStackIndex.l
+    PanelStackSize.l
+    ToolTipWindow.i
+  EndStructure
+CompilerEndIf
+
 Import ""
-  CompilerIf Not(Defined(PB_Object_Count, #PB_Procedure))          : PB_Object_Count(PB_Gadget_Objects)                          : CompilerEndIf
-  CompilerIf Not(Defined(PB_Object_EnumerateAll, #PB_Procedure))   : PB_Object_EnumerateAll(Object, *Object, ObjectData)         : CompilerEndIf
-  CompilerIf Not(Defined(PB_Object_EnumerateStart, #PB_Procedure)) : PB_Object_EnumerateStart(PB_Gadget_Objects)                 : CompilerEndIf
-  CompilerIf Not(Defined(PB_Object_EnumerateNext, #PB_Procedure))  : PB_Object_EnumerateNext(PB_Gadget_Objects, *Object.Integer) : CompilerEndIf
-  CompilerIf Not(Defined(PB_Object_EnumerateAbort, #PB_Procedure)) : PB_Object_EnumerateAbort(PB_Gadget_Objects)                 : CompilerEndIf
-  CompilerIf Not(Defined(PB_Gadget_Objects, #PB_Variable))         : PB_Gadget_Objects.i                                         : CompilerEndIf
-  CompilerIf Not(Defined(PB_Window_Objects, #PB_Variable))         : PB_Window_Objects.i                                         : CompilerEndIf
+  CompilerIf Not(Defined(PB_Object_Count, #PB_Procedure))            : PB_Object_Count(PB_Gadget_Objects)                          : CompilerEndIf
+  CompilerIf Not(Defined(PB_Object_EnumerateAll, #PB_Procedure))     : PB_Object_EnumerateAll(Object, *Object, ObjectData)         : CompilerEndIf
+  CompilerIf Not(Defined(PB_Object_EnumerateStart, #PB_Procedure))   : PB_Object_EnumerateStart(PB_Gadget_Objects)                 : CompilerEndIf
+  CompilerIf Not(Defined(PB_Object_EnumerateNext, #PB_Procedure))    : PB_Object_EnumerateNext(PB_Gadget_Objects, *Object.Integer) : CompilerEndIf
+  CompilerIf Not(Defined(PB_Object_EnumerateAbort, #PB_Procedure))   : PB_Object_EnumerateAbort(PB_Gadget_Objects)                 : CompilerEndIf
+  CompilerIf Not (Defined(PB_Object_GetThreadMemory, #PB_Procedure)) : PB_Object_GetThreadMemory(*Mem)                             : CompilerEndIf
+  CompilerIf Not(Defined(PB_Gadget_Objects, #PB_Variable))           : PB_Gadget_Objects.i                                         : CompilerEndIf
+  CompilerIf Not(Defined(PB_Window_Objects, #PB_Variable))           : PB_Window_Objects.i                                         : CompilerEndIf
+  CompilerIf Not (Defined(PB_Gadget_Globals, #PB_Variable))          : PB_Gadget_Globals.i                                         : CompilerEndIf
 EndImport
 
 ; GetParent
@@ -157,6 +171,7 @@ Declare   EditorProc(hWnd, uMsg, wParam, lParam)
 Declare   StaticProc(hWnd, uMsg, wParam, lParam)
 Declare   WinCallback(hWnd, uMsg, wParam, lParam)
 Declare   SetObjectTheme(Gadget, Theme.s)
+Declare   ToolTipHandleOC()
 Declare.s GadgetTypeToString(Gadget)
 Declare   TypetoValue(Type.s)
 Declare   SetObjectColorType(Type.s = "", Value = 1)
@@ -760,6 +775,10 @@ Procedure ListIconProc(hWnd, uMsg, wParam, lParam)
               If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
                 ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
               EndIf
+              ;Debug Str(Gadget) + ": " + Str(DesktopScaledX(GadgetWidth(Gadget))) + " - (" + Str(*pnmCDraw\rc\left) + ", " + Str(*pnmCDraw\rc\top) + ", " + Str(*pnmCDraw\rc\right) + ", " + Str(*pnmCDraw\rc\bottom) + ")"
+              ;If *pnmCDraw\rc\right < DesktopScaledX(GadgetWidth(Gadget))
+              ;  *pnmCDraw\rc\right = DesktopScaledX(GadgetWidth(Gadget))
+              ;EndIf
               FillRect_(*pnmCDraw\hdc, *pnmCDraw\rc, ObjectCBrush(Str(BackColor)))
               If IsWindowEnabled_(GadgetID(Gadget)) = #False
                 If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
@@ -1156,7 +1175,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
           EndIf
         EndIf
         
-        If *DrawItem\CtlType = #ODT_TAB
+        If *DrawItem\CtlType = #ODT_TAB   ;PanelGadget
           Gadget = GetDlgCtrlID_(*DrawItem\hwndItem)
           If IsGadget(Gadget)
             PushMapPosition(ObjectC())
@@ -1249,6 +1268,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
                     If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
                       ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
                     EndIf
+                    ;*lvCD\nmcd\rc\right = DesktopScaledX(GadgetWidth(Gadget))
                     FillRect_(*lvCD\nmcd\hDC, *lvCD\nmcd\rc, ObjectCBrush(Str(BackColor)))
                     ProcedureReturn #CDRF_NOTIFYITEMDRAW
                   Case #CDDS_ITEMPREPAINT
@@ -1311,6 +1331,29 @@ Procedure SetObjectTheme(Gadget, Theme.s)
     EndWith
   EndIf
 EndProcedure
+
+Procedure ToolTipHandleOC() 
+  Protected *PBGadget.PB_Globals 
+  *PBGadget = PB_Object_GetThreadMemory(PB_Gadget_Globals) 
+  ProcedureReturn *PBGadget\ToolTipWindow 
+EndProcedure
+
+Macro _ToolTipHandleOC()
+  Tooltip = ToolTipHandleOC()
+  If Tooltip
+    SetWindowTheme_(Tooltip, @"", @"")
+    ;SendMessage_(Tooltip, #TTM_SETDELAYTIME, #TTDT_INITIAL, 250) : SendMessage_(Tooltip, #TTM_SETDELAYTIME,#TTDT_AUTOPOP, 5000) : SendMessage_(Tooltip, #TTM_SETDELAYTIME,#TTDT_RESHOW, 250)
+    Protected TmpBackColor = GetWindowColor(GetWindowRoot(Gadget))   ; GetParentBackColor(Gadget)
+    SendMessage_(Tooltip, #TTM_SETTIPBKCOLOR, TmpBackColor, 0)
+    If IsDarkColorOC(TmpBackColor)
+      SendMessage_(Tooltip, #TTM_SETTIPTEXTCOLOR, #White, 0)
+    Else
+      SendMessage_(Tooltip, #TTM_SETTIPTEXTCOLOR, #Black, 0)
+    EndIf
+    SendMessage_(Tooltip, #WM_SETFONT, 0, 0)
+    SendMessage_(Tooltip, #TTM_SETMAXTIPWIDTH, 0, 460) 
+  EndIf
+EndMacro
 
 Procedure.s GadgetTypeToString(Gadget)
   Select GadgetType(Gadget)
@@ -1447,12 +1490,14 @@ Procedure SetObjectColorType(Type.s = "", Value = 1)
 EndProcedure
 
 Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
-  Protected BackColor, OldBackColor, OldTextColor, SplitterImg
+  Protected BackColor, OldBackColor, OldTextColor, SplitterImg, Tooltip
   
   If FindMapElement(ObjectC(), Str(Gadget))
     With ObjectC()
       OldBackColor = \BackColor : OldTextColor = \TextColor
       \BackMode = BackGroundColor : \TextMode = FrontColor
+      
+      _ToolTipHandleOC()
       
       ; ----- BackColor -----
       Select \BackMode
@@ -1599,8 +1644,8 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
             SendMessage_(\ObjectID, #WM_ENABLE, IsWindowEnabled_(\ObjectID), 0)
             
           Case #PB_GadgetType_Spin, #PB_GadgetType_String
-            SetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE, GetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE) &~ #WS_EX_CLIENTEDGE)
-            SetWindowLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) | #WS_BORDER)
+            ;SetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE, GetWindowLongPtr_(\ObjectID, #GWL_EXSTYLE) &~ #WS_EX_CLIENTEDGE)
+            ;SetWindowLongPtr_(\ObjectID, #GWL_STYLE, GetWindowLongPtr_(\ObjectID, #GWL_STYLE) | #WS_BORDER)
             CompilerIf #EditAccentColor
               If IsDarkColorOC(\BackColor) : BackColor = AccentColorOC(\BackColor, 10) : Else : BackColor = AccentColorOC(\BackColor, -10) : EndIf
               SetGadgetColor(Gadget, #PB_Gadget_BackColor, BackColor)
@@ -1877,5 +1922,5 @@ Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #
   
 EndProcedure
 
-; IDE Options = PureBasic 6.00 LTS (Windows - x64)
+; IDE Options = PureBasic 6.03 LTS (Windows - x64)
 ; EnableXP
