@@ -7,9 +7,9 @@
 ;              The theme "Explorer" or "DarkMode_Explorer" (Windows 10 and up) is automatically applied according to the background color of each Gadget for
 ;                  ComboBox, Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree
 ;      Author: ChrisR
-;     Version: 1.4.0
-;        Date: 2023-01-24   (Creation Date: 2022-04-14)
-;  PB-Version: 5.73 6.0 x64/x86
+;     Version: 1.5.0
+;        Date: 2023-11-24   (Creation Date: 2022-04-14)
+;  PB-Version: 5.73 - 6.03 x64/x86
 ;          OS: Windows only
 ;      Credit: PB Forum, Rashad for his help: ComboBox WM_DRAWITEM example, Colored ListIcon Header,...
 ;       Forum: https://www.purebasic.fr/english/viewtopic.php?t=78966
@@ -168,7 +168,6 @@ Declare   ListIconProc(hWnd, uMsg, wParam, lParam)
 Declare   PanelProc(hWnd, uMsg, wParam, lParam)
 Declare   CalendarProc(hWnd, uMsg, wParam, lParam)
 Declare   EditorProc(hWnd, uMsg, wParam, lParam)
-Declare   StaticProc(hWnd, uMsg, wParam, lParam)
 Declare   WinCallback(hWnd, uMsg, wParam, lParam)
 Declare   SetObjectTheme(Gadget, Theme.s)
 Declare   ToolTipHandleOC()
@@ -692,7 +691,7 @@ Procedure SplitterProc(hWnd, uMsg, wParam, lParam)
         ;ProcedureReturn #False
         
       Case #WM_PAINT
-        PushMapPosition(ObjectC())
+        ;PushMapPosition(ObjectC())
         If FindMapElement(ObjectC(), Str(Gadget))
           If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
             BackColor = \BackColor
@@ -700,7 +699,7 @@ Procedure SplitterProc(hWnd, uMsg, wParam, lParam)
             Found     = #True
           EndIf
         EndIf
-        PopMapPosition(ObjectC())
+        ;PopMapPosition(ObjectC())
         If Found = #False Or BackColor = #PB_None : ProcedureReturn CallWindowProc_(OldSplitterProc, hWnd, uMsg, wParam, lParam) : EndIf
         
         If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
@@ -743,7 +742,7 @@ Procedure ListIconProc(hWnd, uMsg, wParam, lParam)
         *pnmHDR = lparam
         If *pnmHDR\code = #NM_CUSTOMDRAW   ; Get handle to ListIcon and ExplorerList Header Control
           
-          PushMapPosition(ObjectC())
+          ;PushMapPosition(ObjectC())
           If FindMapElement(ObjectC(), Str(Gadget))
             If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
               BackColor = \BackColor
@@ -751,7 +750,7 @@ Procedure ListIconProc(hWnd, uMsg, wParam, lParam)
               Found     = #True
             EndIf
           EndIf
-          PopMapPosition(ObjectC())
+          ;PopMapPosition(ObjectC())
           If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
           
           *pnmCDraw = lparam
@@ -831,14 +830,14 @@ Procedure PanelProc(hWnd, uMsg, wParam, lParam)
         ProcedureReturn #True
         
       Case #WM_ERASEBKGND
-        PushMapPosition(ObjectC())
+        ;PushMapPosition(ObjectC())
         If FindMapElement(ObjectC(), Str(Gadget))
           If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
             BackColor = \BackColor
             Found     = #True
           EndIf
         EndIf
-        PopMapPosition(ObjectC())
+        ;PopMapPosition(ObjectC())
         If Found = #False Or BackColor = #PB_None : ProcedureReturn CallWindowProc_(OldPanelProc, hWnd, uMsg, wParam, lParam) : EndIf
         
         ;If #DebugON : Debug "WM_ERASEBKGND " + LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
@@ -879,14 +878,14 @@ Procedure CalendarProc(hWnd, uMsg, wParam, lParam)
         ;ProcedureReturn #False
         
       Case #WM_ENABLE
-        PushMapPosition(ObjectC())
+        ;PushMapPosition(ObjectC())
         If FindMapElement(ObjectC(), Str(Gadget))
           If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
             TextColor = \TextColor
             Found = #True
           EndIf
         EndIf
-        PopMapPosition(ObjectC())
+        ;PopMapPosition(ObjectC())
         If Found = #False Or TextColor = #PB_None : ProcedureReturn Result : EndIf
         
         If wParam = #False
@@ -919,14 +918,14 @@ Procedure EditorProc(hWnd, uMsg, wParam, lParam)
         ;ProcedureReturn #False
         
       Case #WM_ENABLE
-        PushMapPosition(ObjectC())
+        ;PushMapPosition(ObjectC())
         If FindMapElement(ObjectC(), Str(Gadget))
           If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
             TextColor = \TextColor
             Found = #True
           EndIf
         EndIf
-        PopMapPosition(ObjectC())
+        ;PopMapPosition(ObjectC())
         If Found = #False Or TextColor = #PB_None : ProcedureReturn Result : EndIf
         
         If wParam
@@ -939,14 +938,14 @@ Procedure EditorProc(hWnd, uMsg, wParam, lParam)
         ProcedureReturn #False
         
       Case #WM_ERASEBKGND
-        PushMapPosition(ObjectC())
+        ;PushMapPosition(ObjectC())
         If FindMapElement(ObjectC(), Str(Gadget))
           If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
             BackColor = \BackColor
             Found     = #True
           EndIf
         EndIf
-        PopMapPosition(ObjectC())
+        ;PopMapPosition(ObjectC())
         If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
         
         CompilerIf #EditAccentColor
@@ -959,43 +958,6 @@ Procedure EditorProc(hWnd, uMsg, wParam, lParam)
         EndIf
         FillRect_(wParam, @Rect, ObjectCBrush(Str(BackColor)))
         ProcedureReturn #True
-        
-    EndSelect
-  EndWith
-  
-  ProcedureReturn Result
-EndProcedure
-
-Procedure StaticProc(hWnd, uMsg, wParam, lParam)
-  Protected Gadget = GetDlgCtrlID_(hWnd), TextColor
-  Protected Result = CallWindowProc_(ObjectC(Str(Gadget))\OldProc, hWnd, uMsg, wParam, lParam)
-  
-  With ObjectC()
-    Select uMsg
-      Case #WM_NCDESTROY
-        If FindMapElement(ObjectC(), Str(Gadget))
-          If \OldProc
-            SetWindowLongPtr_(hWnd, #GWLP_WNDPROC, \OldProc)
-          EndIf
-          DeleteMapElement(ObjectC())
-        EndIf
-        ;ProcedureReturn #False
-        
-      Case #WM_ENABLE
-        PushMapPosition(ObjectC())
-        If FindMapElement(ObjectC(), Str(Gadget))
-          Select GadgetType(Gadget)
-            Case #PB_GadgetType_CheckBox, #PB_GadgetType_Option, #PB_GadgetType_TrackBar
-              If wParam
-                SetWindowTheme_(hWnd, "", "")
-              Else
-                SetWindowTheme_(hWnd, "", 0)
-              EndIf
-            Case #PB_GadgetType_Frame, #PB_GadgetType_Text
-          EndSelect
-        EndIf
-        PopMapPosition(ObjectC())
-        ProcedureReturn #False
         
     EndSelect
   EndWith
@@ -1059,7 +1021,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
       Case #WM_CTLCOLORSTATIC   ; For CheckBoxGadget, FrameGadget, OptionGadget, TextGadget, TrackBarGadget
         Gadget = GetDlgCtrlID_(lparam)
         If IsGadget(Gadget)
-          PushMapPosition(ObjectC())
+          ;PushMapPosition(ObjectC())
           If FindMapElement(ObjectC(), Str(Gadget))
             If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
               BackColor = \BackColor
@@ -1067,7 +1029,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
               Found     = #True
             EndIf
           EndIf
-          PopMapPosition(ObjectC())
+          ;PopMapPosition(ObjectC())
           If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
           
           If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
@@ -1097,7 +1059,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
           If Buffer = "ComboBox"
             Gadget = GetDlgCtrlID_(ParentGadget)
             If IsGadget(Gadget)
-              PushMapPosition(ObjectC())
+              ;PushMapPosition(ObjectC())
               If FindMapElement(ObjectC(), Str(Gadget))
                 If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
                   BackColor = \BackColor
@@ -1105,7 +1067,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
                   Found     = #True
                 EndIf
               EndIf
-              PopMapPosition(ObjectC())
+              ;PopMapPosition(ObjectC())
               If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
               
               CompilerIf #EditAccentColor
@@ -1117,7 +1079,11 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
                 If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
               EndIf
               If Gadget <> GetActiveGadget()
-                SendMessage_(lParam, #EM_SETSEL, 0, 0)   ; Deselect the ComboBox editable string if not the active Gadget
+                Protected low, high
+                SendMessage_(lParam, #EM_GETSEL, @low, @high)
+                If low <> high
+                  SendMessage_(lParam, #EM_SETSEL, -1, 0)   ; Deselect the ComboBox editable string if not the active Gadget
+                EndIf
               EndIf
               SetTextColor_(wParam, TextColor)
               SetBkMode_(wParam, #TRANSPARENT)
@@ -1135,7 +1101,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
         If *DrawItem\CtlType = #ODT_COMBOBOX
           Gadget = wParam
           If IsGadget(Gadget)
-            PushMapPosition(ObjectC())
+            ;PushMapPosition(ObjectC())
             If FindMapElement(ObjectC(), Str(Gadget))
               If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
                 BackColor = \BackColor
@@ -1143,7 +1109,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
                 Found     = #True
               EndIf
             EndIf
-            PopMapPosition(ObjectC())
+            ;PopMapPosition(ObjectC())
             If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
             
             If *DrawItem\itemID <> -1
@@ -1178,7 +1144,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
         If *DrawItem\CtlType = #ODT_TAB   ;PanelGadget
           Gadget = GetDlgCtrlID_(*DrawItem\hwndItem)
           If IsGadget(Gadget)
-            PushMapPosition(ObjectC())
+            ;PushMapPosition(ObjectC())
             If FindMapElement(ObjectC(), Str(Gadget))
               If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
                 BackColor = \BackColor
@@ -1186,7 +1152,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
                 Found     = #True
               EndIf
             EndIf
-            PopMapPosition(ObjectC())
+            ;PopMapPosition(ObjectC())
             If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
             
             If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
@@ -1228,14 +1194,14 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
         If *NMDATETIMECHANGE\nmhdr\code = #DTN_DROPDOWN
           Gadget = GetDlgCtrlID_(*NMDATETIMECHANGE\nmhdr\hwndfrom)
           If GadgetType(Gadget) = #PB_GadgetType_Date
-            PushMapPosition(ObjectC())
+            ;PushMapPosition(ObjectC())
             If FindMapElement(ObjectC(), Str(Gadget))
               If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
                 BackColor = \BackColor
                 Found     = #True
               EndIf
             EndIf
-            PopMapPosition(ObjectC())
+            ;PopMapPosition(ObjectC())
             If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
             
             If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" : EndIf
@@ -1250,7 +1216,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
           If IsGadget(Gadget)
             If IsWindowEnabled_(GadgetID(Gadget)) = #False
               If GadgetType(Gadget) = #PB_GadgetType_ListIcon Or GadgetType(Gadget) = #PB_GadgetType_ExplorerList
-                PushMapPosition(ObjectC())
+                ;PushMapPosition(ObjectC())
                 If FindMapElement(ObjectC(), Str(Gadget))
                   If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
                     BackColor = \BackColor
@@ -1258,7 +1224,7 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
                     Found     = #True
                   EndIf
                 EndIf
-                PopMapPosition(ObjectC())
+                ;PopMapPosition(ObjectC())
                 If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
                 
                 If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
@@ -1581,21 +1547,6 @@ Procedure ObjectColor(Gadget, BackGroundColor, ParentBackColor, FrontColor)
       If OldBackColor <> \BackColor Or OldTextColor <> \TextColor
         Select \Type
           Case #PB_GadgetType_CheckBox, #PB_GadgetType_Frame, #PB_GadgetType_Option, #PB_GadgetType_TrackBar, #PB_GadgetType_Text
-            If  \BackMode = #PB_Default And \TextMode = #PB_Default
-              If FindMapElement(ObjectC(), Str(Gadget))
-                If \OldProc
-                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, \OldProc)
-                  \OldProc = 0
-                EndIf
-              EndIf
-            Else
-              If FindMapElement(ObjectC(), Str(Gadget))
-                If Not \OldProc
-                  \OldProc = GetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC)
-                  SetWindowLongPtr_(\ObjectID, #GWLP_WNDPROC, @StaticProc())
-                EndIf
-              EndIf
-            EndIf
             SendMessage_(\ObjectID, #WM_ENABLE, IsWindowEnabled_(\ObjectID), 0)
             Select \Type
               Case #PB_GadgetType_CheckBox, #PB_GadgetType_Option, #PB_GadgetType_TrackBar
