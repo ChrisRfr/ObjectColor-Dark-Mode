@@ -7,9 +7,9 @@
 ;              The theme "Explorer" or "DarkMode_Explorer" (Windows 10 and up) is automatically applied according to the background color of each Gadget for
 ;                  ComboBox, Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree
 ;      Author: ChrisR
-;     Version: 1.5.0
-;        Date: 2023-11-24   (Creation Date: 2022-04-14)
-;  PB-Version: 5.73 - 6.03 x64/x86
+;     Version: 1.5.1
+;        Date: 2024-05-02   (Creation Date: 2022-04-14)
+;  PB-Version: 5.73 - 6.10 x64/x86
 ;          OS: Windows only
 ;      Credit: PB Forum, Rashad for his help: ComboBox WM_DRAWITEM example, Colored ListIcon Header,...
 ;       Forum: https://www.purebasic.fr/english/viewtopic.php?t=78966
@@ -1053,47 +1053,63 @@ Procedure WinCallback(hWnd, uMsg, wParam, lParam)
         ; Case #WM_CTLCOLORSCROLLBAR   ; Scrlbar
         
       Case #WM_CTLCOLOREDIT
-        ParentGadget = GetParent_(lParam)
-        Buffer = Space(64)
-        If GetClassName_(ParentGadget, @Buffer, 64)
-          If Buffer = "ComboBox"
-            Gadget = GetDlgCtrlID_(ParentGadget)
-            If IsGadget(Gadget)
-              ;PushMapPosition(ObjectC())
-              If FindMapElement(ObjectC(), Str(Gadget))
-                If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
-                  BackColor = \BackColor
-                  TextColor = \TextColor
-                  Found     = #True
-                EndIf
-              EndIf
-              ;PopMapPosition(ObjectC())
-              If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
-              
-              CompilerIf #EditAccentColor
-                If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 10) : Else : BackColor = AccentColorOC(BackColor, -10) : EndIf
-              CompilerEndIf
-              If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
-                                  " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
-              If IsWindowEnabled_(GadgetID(Gadget)) = #False
-                If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
-              EndIf
-              If Gadget <> GetActiveGadget()
-                Protected low, high
-                SendMessage_(lParam, #EM_GETSEL, @low, @high)
-                If low <> high
-                  SendMessage_(lParam, #EM_SETSEL, -1, 0)   ; Deselect the ComboBox editable string if not the active Gadget
-                EndIf
-              EndIf
-              SetTextColor_(wParam, TextColor)
-              SetBkMode_(wParam, #TRANSPARENT)
-              ;SetBkColor_(wParam, BackColor)
-              If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
-                ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
-              EndIf
-              ProcedureReturn ObjectCBrush(Str(BackColor))
+        Gadget = GetDlgCtrlID_(lparam)
+        If IsGadget(Gadget) And GadgetType(Gadget) = #PB_GadgetType_ComboBox
+          ;PushMapPosition(ObjectC())
+          If FindMapElement(ObjectC(), Str(Gadget))
+            If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+              BackColor = \BackColor
+              TextColor = \TextColor
+              Found     = #True
             EndIf
           EndIf
+          ;PopMapPosition(ObjectC())
+          If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+        Else
+          ParentGadget = GetParent_(lParam)
+          Buffer = Space(64)
+          If GetClassName_(ParentGadget, @Buffer, 64)
+            If Buffer = "ComboBox"
+              Gadget = GetDlgCtrlID_(ParentGadget)
+              If IsGadget(Gadget)
+                ;PushMapPosition(ObjectC())
+                If FindMapElement(ObjectC(), Str(Gadget))
+                  If Not(\BackMode = #PB_Default And \TextMode = #PB_Default)
+                    BackColor = \BackColor
+                    TextColor = \TextColor
+                    Found     = #True
+                  EndIf
+                EndIf
+                ;PopMapPosition(ObjectC())
+                If Found = #False Or BackColor = #PB_None : ProcedureReturn Result : EndIf
+              EndIf
+            EndIf
+          EndIf
+        EndIf
+        
+        If Found
+          CompilerIf #EditAccentColor
+            If IsDarkColorOC(BackColor) : BackColor = AccentColorOC(BackColor, 10) : Else : BackColor = AccentColorOC(BackColor, -10) : EndIf
+          CompilerEndIf
+          If #DebugON : Debug LSet(GadgetTypeToString(Gadget) + ": ", 22) + LSet(Str(Gadget), 10) + " - Back RGB(" + Str(Red(BackColor)) + ", " + Str(Green(BackColor)) + ", " + Str(Blue(BackColor)) + ")" +
+                              " - Text RGB(" + Str(Red(TextColor)) + ", " + Str(Green(TextColor)) + ", " + Str(Blue(TextColor)) + ")" : EndIf
+          If IsWindowEnabled_(GadgetID(Gadget)) = #False
+            If IsDarkColorOC(TextColor) : TextColor = $909090 : Else : TextColor = $707070 : EndIf
+          EndIf
+          If Gadget <> GetActiveGadget()
+            Protected low, high
+            SendMessage_(lParam, #EM_GETSEL, @low, @high)
+            If low <> high
+              SendMessage_(lParam, #EM_SETSEL, -1, 0)   ; Deselect the ComboBox editable string if not the active Gadget
+            EndIf
+          EndIf
+          SetTextColor_(wParam, TextColor)
+          SetBkMode_(wParam, #TRANSPARENT)
+          ;SetBkColor_(wParam, BackColor)
+          If Not(FindMapElement(ObjectCBrush(), Str(BackColor)))
+            ObjectCBrush(Str(BackColor)) = CreateSolidBrush_(BackColor)
+          EndIf
+          ProcedureReturn ObjectCBrush(Str(BackColor))
         EndIf
         
       Case #WM_DRAWITEM   ; For ComboBoxGadget and PanelGadget
@@ -1872,6 +1888,3 @@ Procedure SetObjectColor(Window = #PB_All, Gadget = #PB_All, BackGroundColor = #
   EndIf
   
 EndProcedure
-
-; IDE Options = PureBasic 6.03 LTS (Windows - x64)
-; EnableXP
