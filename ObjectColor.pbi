@@ -7,7 +7,7 @@
 ;              The theme "Explorer" or "DarkMode_Explorer" (Windows 10 and up) is automatically applied according to the background color of each Gadget for
 ;                  ComboBox, Editor, ExplorerList, ExplorerTree, ListIcon, ListView, ScrollArea, ScrollBar, Tree
 ;      Author: ChrisR
-;     Version: 1.5.1
+;     Version: 1.5.2
 ;        Date: 2024-05-02   (Creation Date: 2022-04-14)
 ;  PB-Version: 5.73 - 6.10 x64/x86
 ;          OS: Windows only
@@ -1323,17 +1323,19 @@ EndProcedure
 Macro _ToolTipHandleOC()
   Tooltip = ToolTipHandleOC()
   If Tooltip
-    SetWindowTheme_(Tooltip, @"", @"")
-    ;SendMessage_(Tooltip, #TTM_SETDELAYTIME, #TTDT_INITIAL, 250) : SendMessage_(Tooltip, #TTM_SETDELAYTIME,#TTDT_AUTOPOP, 5000) : SendMessage_(Tooltip, #TTM_SETDELAYTIME,#TTDT_RESHOW, 250)
     Protected TmpBackColor = GetWindowColor(GetWindowRoot(Gadget))   ; GetParentBackColor(Gadget)
-    SendMessage_(Tooltip, #TTM_SETTIPBKCOLOR, TmpBackColor, 0)
-    If IsDarkColorOC(TmpBackColor)
-      SendMessage_(Tooltip, #TTM_SETTIPTEXTCOLOR, #White, 0)
-    Else
-      SendMessage_(Tooltip, #TTM_SETTIPTEXTCOLOR, #Black, 0)
+    If TmpBackColor <> #PB_Default
+      SetWindowTheme_(Tooltip, @"", @"")
+      ;SendMessage_(Tooltip, #TTM_SETDELAYTIME, #TTDT_INITIAL, 250) : SendMessage_(Tooltip, #TTM_SETDELAYTIME,#TTDT_AUTOPOP, 5000) : SendMessage_(Tooltip, #TTM_SETDELAYTIME,#TTDT_RESHOW, 250)
+      SendMessage_(Tooltip, #TTM_SETTIPBKCOLOR, TmpBackColor, 0)
+      If IsDarkColorOC(TmpBackColor)
+        SendMessage_(Tooltip, #TTM_SETTIPTEXTCOLOR, #White, 0)
+      Else
+        SendMessage_(Tooltip, #TTM_SETTIPTEXTCOLOR, #Black, 0)
+      EndIf
+      SendMessage_(Tooltip, #WM_SETFONT, 0, 0)
+      SendMessage_(Tooltip, #TTM_SETMAXTIPWIDTH, 0, 460)
     EndIf
-    SendMessage_(Tooltip, #WM_SETFONT, 0, 0)
-    SendMessage_(Tooltip, #TTM_SETMAXTIPWIDTH, 0, 460) 
   EndIf
 EndMacro
 
